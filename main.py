@@ -24,6 +24,7 @@ from typing import List
 
 import requests
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from database import Base, SessionLocal, engine, get_db
@@ -54,6 +55,18 @@ app = FastAPI(
         "automatically flagged as anomalies for manual review."
     ),
     version="1.0.0",
+)
+
+# ---------------------------------------------------------------------------
+# CORS – allow the Vite dev server to reach the API
+# ---------------------------------------------------------------------------
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
