@@ -1,0 +1,305 @@
+"""
+main.py
+-------
+FastAPI application entry point.
+
+Architecture highlights
+-----------------------
+* Tables are created automatically on startup via `create_all`.
+* POST /orders/batch is intentionally non-blocking: it persists incoming
+  orders synchronously (so the caller immediately gets a confirmation),
+  then hands off geocoding to a FastAPI BackgroundTask.
+* The background geocoding worker calls the OpenStreetMap Nominatim API
+  with a mandatory 1.2-second sleep between requests (per OSM usage policy).
+* Business rules for anomaly detection are encapsulated in
+  `_process_orders_geocoding` and applied atomically per-order.
+"""
+
+import time
+import logging
+from typing import List
+
+import requests
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, status
+from sqlalchemy.orm import Session
+
+from database import Base, SessionLocal, engine, get_db
+from models import Order, OrderStatus
+from schemas import OrderCreate, OrderResponse
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s  %(levelname)-8s  %(name)s – %(message)s",
+)
+logger = logging.getLogger("smart_fleet")
+
+# ---------------------------------------------------------------------------
+# Application bootstrap
+# ---------------------------------------------------------------------------
+
+app = FastAPI(
+    title="Smart Fleet Dashboard – Support API",
+    description=(
+        "Enterprise-level logistics anomaly detection and support system. "
+        "Orders are geocoded in the background; low-confidence results are "
+        "automatically flagged as anomalies for manual review."
+    ),
+    version="1.0.0",
+)
+
+
+@app.on_event("startup")
+def on_startup() -> None:
+    """
+    Create all database tables defined in the ORM models if they do not
+    already exist. This is idempotent and safe to run on every restart.
+    """
+    logger.info("Running database migrations (create_all) …")
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database tables ready.")
+
+
+# ---------------------------------------------------------------------------
+# Nominatim geocoding constants
+# ---------------------------------------------------------------------------
+
+NOMINATIM_URL    = "https://nominatim.openstreetmap.org/search"
+NOMINATIM_HEADERS = {"User-Agent": "ArvatoSupportPoC_v1.0"}
+RATE_LIMIT_SLEEP  = 1.2   # seconds – required by OSM usage policy
+MIN_PLACE_RANK    = 26    # results below this threshold are treated as anomalies
+
+
+# ---------------------------------------------------------------------------
+# Background geocoding worker
+# ---------------------------------------------------------------------------
+
+def _process_orders_geocoding(order_ids: List[int]) -> None:
+    """
+    Background task: geocode each order via Nominatim and apply business rules.
+
+    Called after POST /orders/batch returns so that the HTTP response is
+    never blocked by network I/O.
+
+    Business rules
+    ~~~~~~~~~~~~~~
+    • Empty API response  → status = ANOMALY, was_anomalous = True
+    • place_rank < 26     → status = ANOMALY, was_anomalous = True
+    • place_rank >= 26    → latitude / longitude / place_rank updated,
+                            status remains PENDING (ready for routing)
+
+    Parameters
+    ----------
+    order_ids:
+        Primary keys of the Order rows to process, in insertion order.
+    """
+    db: Session = SessionLocal()
+
+    try:
+        for order_id in order_ids:
+            order: Order | None = db.get(Order, order_id)
+
+            if order is None:
+                logger.warning("Geocoding skipped – order id=%s not found.", order_id)
+                continue
+
+            logger.info(
+                "Geocoding order id=%s  address=%r", order_id, order.raw_address
+            )
+
+            # ------------------------------------------------------------------
+            # Nominatim API request
+            # ------------------------------------------------------------------
+            try:
+                response = requests.get(
+                    NOMINATIM_URL,
+                    params={
+                        "q":              order.raw_address,
+                        "format":         "json",
+                        "addressdetails": 1,
+                        "limit":          1,
+                    },
+                    headers=NOMINATIM_HEADERS,
+                    timeout=10,
+                )
+                response.raise_for_status()
+                results: list = response.json()
+
+            except requests.RequestException as exc:
+                logger.error(
+                    "Nominatim request failed for order id=%s: %s", order_id, exc
+                )
+                # Treat network errors the same as empty results → ANOMALY
+                results = []
+
+            # ------------------------------------------------------------------
+            # Business rule evaluation
+            # ------------------------------------------------------------------
+            if not results:
+                # Rule: empty response → ANOMALY
+                logger.warning(
+                    "Order id=%s flagged ANOMALY – Nominatim returned no results.",
+                    order_id,
+                )
+                order.status       = OrderStatus.ANOMALY
+                order.was_anomalous = True
+
+            else:
+                best_match  = results[0]
+                place_rank  = int(best_match.get("place_rank", 0))
+                lat         = float(best_match.get("lat", 0.0))
+                lon         = float(best_match.get("lon", 0.0))
+
+                if place_rank < MIN_PLACE_RANK:
+                    # Rule: low-confidence geocoding result → ANOMALY
+                    logger.warning(
+                        "Order id=%s flagged ANOMALY – place_rank=%s < %s.",
+                        order_id, place_rank, MIN_PLACE_RANK,
+                    )
+                    order.status        = OrderStatus.ANOMALY
+                    order.was_anomalous = True
+
+                else:
+                    # Rule: acceptable result → populate coordinates, stay PENDING
+                    logger.info(
+                        "Order id=%s geocoded successfully "
+                        "(lat=%.6f, lon=%.6f, place_rank=%s).",
+                        order_id, lat, lon, place_rank,
+                    )
+                    order.latitude   = lat
+                    order.longitude  = lon
+                    order.place_rank = place_rank
+
+            db.commit()
+            db.refresh(order)
+
+            # ------------------------------------------------------------------
+            # Rate-limit guard required by OSM usage policy
+            # ------------------------------------------------------------------
+            time.sleep(RATE_LIMIT_SLEEP)
+
+    finally:
+        db.close()
+
+
+# ---------------------------------------------------------------------------
+# Endpoints
+# ---------------------------------------------------------------------------
+
+@app.post(
+    "/orders/batch",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Submit a batch of orders for geocoding",
+    description=(
+        "Accepts a list of orders, persists them immediately with status PENDING, "
+        "and returns a 202 Accepted. "
+        "Geocoding runs asynchronously in the background so the caller is never blocked."
+    ),
+)
+def create_orders_batch(
+    payload:          List[OrderCreate],
+    background_tasks: BackgroundTasks,
+    db:               Session = Depends(get_db),
+) -> dict:
+    """
+    Non-blocking batch order ingestion endpoint.
+
+    1. Validate all incoming orders (Pydantic handles this automatically).
+    2. Persist every order as PENDING in a single transaction.
+    3. Register the geocoding worker as a BackgroundTask.
+    4. Return immediately with a 202 Accepted – the client is never blocked.
+    """
+
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Payload must contain at least one order.",
+        )
+
+    # ------------------------------------------------------------------
+    # Step 1 – Persist all orders synchronously before returning
+    # ------------------------------------------------------------------
+    new_orders: List[Order] = []
+
+    for item in payload:
+        order = Order(
+            customer_name=item.customer_name,
+            raw_address=item.raw_address,
+            weight=item.weight,
+            status=OrderStatus.PENDING,
+        )
+        db.add(order)
+        new_orders.append(order)
+
+    db.commit()
+
+    # Refresh to populate auto-generated fields (id, created_at, …)
+    for order in new_orders:
+        db.refresh(order)
+
+    order_ids = [o.id for o in new_orders]
+
+    logger.info(
+        "Batch ingested – %s order(s) saved (ids=%s). "
+        "Geocoding dispatched to background.",
+        len(order_ids), order_ids,
+    )
+
+    # ------------------------------------------------------------------
+    # Step 2 – Dispatch geocoding to background (non-blocking)
+    # ------------------------------------------------------------------
+    background_tasks.add_task(_process_orders_geocoding, order_ids)
+
+    return {
+        "message":   "Orders received, processing in background.",
+        "order_ids": order_ids,
+        "count":     len(order_ids),
+    }
+
+
+@app.get(
+    "/orders",
+    response_model=List[OrderResponse],
+    summary="List all orders",
+    description="Returns all orders in the system, newest first.",
+)
+def list_orders(
+    db: Session = Depends(get_db),
+) -> List[Order]:
+    """Return every order sorted by creation date descending."""
+    return db.query(Order).order_by(Order.created_at.desc()).all()
+
+
+@app.get(
+    "/orders/{order_id}",
+    response_model=OrderResponse,
+    summary="Get a single order by ID",
+)
+def get_order(order_id: int, db: Session = Depends(get_db)) -> Order:
+    """Fetch a single order by its primary key."""
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Order with id={order_id} not found.",
+        )
+    return order
+
+
+@app.get(
+    "/orders/anomalies/",
+    response_model=List[OrderResponse],
+    summary="List all anomalous orders",
+    description="Returns all orders currently in ANOMALY status for support review.",
+)
+def list_anomalies(db: Session = Depends(get_db)) -> List[Order]:
+    """Return all orders whose current status is ANOMALY."""
+    return (
+        db.query(Order)
+        .filter(Order.status == OrderStatus.ANOMALY)
+        .order_by(Order.created_at.desc())
+        .all()
+    )
