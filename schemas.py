@@ -7,6 +7,7 @@ Separation of concerns:
     OrderCreate            – the data a client must provide to create an order.
     OrderResponse          – the full order record returned from the database.
     RouteGenerationRequest – fleet parameters for the CVRP solver.
+    OrderResolve           – support-agent payload for resolving an anomaly.
 """
 
 from datetime import datetime
@@ -130,3 +131,55 @@ class RouteGenerationRequest(BaseModel):
         examples=[100.0],
     )
 
+# ---------------------------------------------------------------------------
+# Anomaly resolution schema
+# ---------------------------------------------------------------------------
+
+class OrderResolve(BaseModel):
+    """
+    Payload accepted by PATCH /orders/{id}/resolve.
+
+    Used exclusively by support agents to manually correct an order that was
+    flagged as ANOMALY.  Only orders in ANOMALY status may be resolved;
+    the endpoint enforces this as a state-machine rule.
+
+    Fields
+    ------
+    new_latitude  : Corrected WGS-84 latitude  (-90 to +90).
+    new_longitude : Corrected WGS-84 longitude (-180 to +180).
+    resolved_by   : Username or employee ID of the support agent.
+    support_note  : Optional free-text description of the correction made.
+    """
+
+    new_latitude: float = Field(
+        ...,
+        ge=-90.0,
+        le=90.0,
+        description="Corrected WGS-84 latitude in decimal degrees.",
+        examples=[37.7765],
+    )
+
+    new_longitude: float = Field(
+        ...,
+        ge=-180.0,
+        le=180.0,
+        description="Corrected WGS-84 longitude in decimal degrees.",
+        examples=[29.0864],
+    )
+
+    resolved_by: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Username or employee ID of the support agent resolving the anomaly.",
+        examples=["support.agent.42"],
+    )
+
+    support_note: Optional[str] = Field(
+        default=None,
+        description=(
+            "Optional free-text note explaining the correction "
+            "(e.g., customer provided wrong district, corrected to city centre)."
+        ),
+        examples=["Address typo corrected: Ankra -> Ankara."],
+    )

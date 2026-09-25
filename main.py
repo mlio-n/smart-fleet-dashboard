@@ -19,6 +19,7 @@ Architecture highlights
 
 import time
 import logging
+from datetime import datetime, timezone
 from typing import List
 
 import requests
@@ -27,7 +28,7 @@ from sqlalchemy.orm import Session
 
 from database import Base, SessionLocal, engine, get_db
 from models import Order, OrderStatus
-from schemas import OrderCreate, OrderResponse, RouteGenerationRequest
+from schemas import OrderCreate, OrderResponse, RouteGenerationRequest, OrderResolve
 from utils import create_distance_matrix
 from routing import solve_cvrp
 
@@ -503,3 +504,118 @@ def generate_routes(
         "unassigned_orders": unassigned,
     }
 
+# ---------------------------------------------------------------------------
+# Anomaly resolution (Support Dashboard)
+# ---------------------------------------------------------------------------
+
+@app.patch(
+    "/orders/{order_id}/resolve",
+    response_model=OrderResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Resolve an anomalous order",
+    description=(
+        "Allows a support agent to manually correct the coordinates of an order "
+        "that was flagged as **ANOMALY** by the geocoding engine.  "
+        "**State-machine rule**: only orders whose current status is `ANOMALY` "
+        "may be resolved.  Any other status will result in a 400 Bad Request.  "
+        "On success the order transitions to `RESOLVED_MANUALLY` and the original "
+        "coordinates are preserved in `original_latitude` / `original_longitude` "
+        "for a complete audit trail."
+    ),
+)
+def resolve_order(
+    order_id: int,
+    payload:  OrderResolve,
+    db:       Session = Depends(get_db),
+) -> Order:
+    """
+    State-machine enforced anomaly resolution.
+
+    Pipeline
+    --------
+    1. Fetch the order by PK - 404 if not found.
+    2. Guard: only ANOMALY orders may be resolved - 400 otherwise.
+    3. Snapshot current (bad) coordinates into original_latitude / original_longitude.
+    4. Apply corrected coordinates from the support agent payload.
+    5. Populate the full resolution audit trail.
+    6. Transition status to RESOLVED_MANUALLY.
+    7. Commit and return the updated order.
+    """
+
+    # ------------------------------------------------------------------
+    # 1 - Fetch order
+    # ------------------------------------------------------------------
+    order = db.get(Order, order_id)
+
+    if order is None:
+        logger.warning("resolve_order: order id=%s not found.", order_id)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Order with id={order_id} not found.",
+        )
+
+    # ------------------------------------------------------------------
+    # 2 - State-machine guard
+    # ------------------------------------------------------------------
+    if order.status != OrderStatus.ANOMALY:
+        logger.warning(
+            "resolve_order: order id=%s rejected – current status is %s, "
+            "expected ANOMALY.",
+            order_id, order.status.value,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Order id={order_id} cannot be resolved: "
+                f"current status is '{order.status.value}', "
+                f"but only orders in 'ANOMALY' status are eligible for resolution."
+            ),
+        )
+
+    # ------------------------------------------------------------------
+    # 3 - Preserve original coordinates for audit trail
+    #     (only snapshot once; skip if already set from a previous attempt)
+    # ------------------------------------------------------------------
+    if order.original_latitude is None and order.original_longitude is None:
+        order.original_latitude  = order.latitude
+        order.original_longitude = order.longitude
+        logger.info(
+            "resolve_order: order id=%s – snapshotting original coords "
+            "(lat=%s, lon=%s).",
+            order_id,
+            order.original_latitude,
+            order.original_longitude,
+        )
+
+    # ------------------------------------------------------------------
+    # 4 - Apply corrected coordinates
+    # ------------------------------------------------------------------
+    order.latitude  = payload.new_latitude
+    order.longitude = payload.new_longitude
+
+    # ------------------------------------------------------------------
+    # 5 - Write resolution audit trail
+    # ------------------------------------------------------------------
+    order.resolved_by  = payload.resolved_by
+    order.resolved_at  = datetime.now(timezone.utc).replace(tzinfo=None)  # naive UTC
+    order.support_note = payload.support_note
+
+    # ------------------------------------------------------------------
+    # 6 - State transition
+    # ------------------------------------------------------------------
+    order.status = OrderStatus.RESOLVED_MANUALLY
+
+    # ------------------------------------------------------------------
+    # 7 - Persist
+    # ------------------------------------------------------------------
+    db.commit()
+    db.refresh(order)
+
+    logger.info(
+        "resolve_order: order id=%s transitioned ANOMALY -> RESOLVED_MANUALLY "
+        "by agent '%s'  new_coords=(%.6f, %.6f).",
+        order_id, payload.resolved_by,
+        payload.new_latitude, payload.new_longitude,
+    )
+
+    return order

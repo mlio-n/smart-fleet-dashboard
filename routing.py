@@ -16,9 +16,12 @@ Key design decisions
   integers, matching OR-Tools' internal solver requirements.
 """
 
+import logging
 from typing import Any, Dict, List
 
 from ortools.constraint_solver import pywrapcp, routing_enums_pb2
+
+logger = logging.getLogger("smart_fleet.routing")
 
 
 # ---------------------------------------------------------------------------
@@ -155,9 +158,17 @@ def solve_cvrp(
     # ------------------------------------------------------------------
     # 6 ─ Solve
     # ------------------------------------------------------------------
+    logger.info(
+        "CVRP solve starting – nodes=%s  vehicles=%s  capacities=%s",
+        n_nodes, num_vehicles, vehicle_capacities,
+    )
     solution = routing.SolveWithParameters(search_params)
 
     if solution is None:
+        logger.warning(
+            "CVRP solver returned NO_SOLUTION for %s nodes and %s vehicles.",
+            n_nodes, num_vehicles,
+        )
         return {
             "status":           "NO_SOLUTION",
             "routes":           [],
@@ -202,6 +213,11 @@ def solve_cvrp(
         routing_index = manager.NodeToIndex(node_index)
         if solution.Value(routing.NextVar(routing_index)) == routing_index:
             dropped.append(node_index)
+
+    logger.info(
+        "CVRP solve SUCCESS – total_distance=%s m  routes=%s  dropped=%s node(s).",
+        total_distance, len(routes), len(dropped),
+    )
 
     return {
         "status":           "SUCCESS",
