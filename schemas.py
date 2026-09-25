@@ -4,8 +4,9 @@ schemas.py
 Pydantic v2 schemas for request validation and response serialisation.
 
 Separation of concerns:
-    OrderCreate   – the data a client must provide to create an order.
-    OrderResponse – the full order record returned from the database.
+    OrderCreate            – the data a client must provide to create an order.
+    OrderResponse          – the full order record returned from the database.
+    RouteGenerationRequest – fleet parameters for the CVRP solver.
 """
 
 from datetime import datetime
@@ -97,3 +98,35 @@ class OrderResponse(BaseModel):
         # instead of requiring plain dicts.
         "from_attributes": True,
     }
+
+
+# ---------------------------------------------------------------------------
+# Route generation request schema
+# ---------------------------------------------------------------------------
+
+class RouteGenerationRequest(BaseModel):
+    """
+    Fleet parameters for the POST /routes/generate endpoint.
+
+    The caller specifies how many vehicles are available and the uniform
+    capacity limit per vehicle (in kilograms).  The solver will do its
+    best to assign all eligible orders, dropping those that cannot fit.
+    """
+
+    num_vehicles: int = Field(
+        ...,
+        ge=1,
+        description="Number of delivery vehicles available in the fleet.",
+        examples=[3],
+    )
+
+    vehicle_capacity: float = Field(
+        ...,
+        gt=0,
+        description=(
+            "Maximum load capacity per vehicle in **kilograms**.  "
+            "Applies uniformly to every vehicle in the fleet."
+        ),
+        examples=[100.0],
+    )
+

@@ -13,6 +13,8 @@ Architecture highlights
   with a mandatory 1.2-second sleep between requests (per OSM usage policy).
 * Business rules for anomaly detection are encapsulated in
   `_process_orders_geocoding` and applied atomically per-order.
+* POST /routes/generate runs the Google OR-Tools CVRP solver against all
+  routable orders (PENDING + RESOLVED_MANUALLY) and transitions them to ROUTED.
 """
 
 import time
@@ -25,7 +27,9 @@ from sqlalchemy.orm import Session
 
 from database import Base, SessionLocal, engine, get_db
 from models import Order, OrderStatus
-from schemas import OrderCreate, OrderResponse
+from schemas import OrderCreate, OrderResponse, RouteGenerationRequest
+from utils import create_distance_matrix
+from routing import solve_cvrp
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -71,6 +75,14 @@ NOMINATIM_URL    = "https://nominatim.openstreetmap.org/search"
 NOMINATIM_HEADERS = {"User-Agent": "ArvatoSupportPoC_v1.0"}
 RATE_LIMIT_SLEEP  = 1.2   # seconds – required by OSM usage policy
 MIN_PLACE_RANK    = 26    # results below this threshold are treated as anomalies
+
+
+# ---------------------------------------------------------------------------
+# Depot (distribution centre) – central Denizli, Turkey
+# ---------------------------------------------------------------------------
+
+DEPOT_LATITUDE  = 37.7765
+DEPOT_LONGITUDE = 29.0864
 
 
 # ---------------------------------------------------------------------------
@@ -303,3 +315,191 @@ def list_anomalies(db: Session = Depends(get_db)) -> List[Order]:
         .order_by(Order.created_at.desc())
         .all()
     )
+
+
+# ---------------------------------------------------------------------------
+# Route generation (CVRP)
+# ---------------------------------------------------------------------------
+
+@app.post(
+    "/routes/generate",
+    status_code=status.HTTP_200_OK,
+    summary="Generate optimised delivery routes (CVRP)",
+    description=(
+        "Runs the Google OR-Tools CVRP solver on all orders whose status is "
+        "PENDING or RESOLVED_MANUALLY **and** that have valid coordinates.  "
+        "Successfully routed orders are transitioned to ROUTED.  "
+        "Orders that the solver cannot fit within fleet capacity are returned "
+        "as 'unassigned' and left in their current status."
+    ),
+)
+def generate_routes(
+    payload: RouteGenerationRequest,
+    db:      Session = Depends(get_db),
+) -> dict:
+    """
+    Full CVRP pipeline:
+
+    1. Fetch all routable orders (PENDING | RESOLVED_MANUALLY with coords).
+    2. Build the coordinate list: depot first, then customer locations.
+    3. Build the Haversine distance matrix.
+    4. Convert weights (kg → grams) to integers for OR-Tools.
+    5. Run the CVRP solver.
+    6. Transition routed orders to ROUTED; leave dropped orders untouched.
+    7. Return a structured JSON response with vehicle assignments and drops.
+    """
+
+    # ------------------------------------------------------------------
+    # 1 ─ Fetch routable orders
+    # ------------------------------------------------------------------
+    routable_statuses = [OrderStatus.PENDING, OrderStatus.RESOLVED_MANUALLY]
+
+    routable_orders: List[Order] = (
+        db.query(Order)
+        .filter(
+            Order.status.in_(routable_statuses),
+            Order.latitude.isnot(None),
+            Order.longitude.isnot(None),
+        )
+        .all()
+    )
+
+    if not routable_orders:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "No routable orders found.  Orders must have status "
+                "PENDING or RESOLVED_MANUALLY **and** valid coordinates."
+            ),
+        )
+
+    logger.info(
+        "Route generation – %s routable order(s) found.", len(routable_orders)
+    )
+
+    # ------------------------------------------------------------------
+    # 2 ─ Build coordinate list (depot = index 0)
+    # ------------------------------------------------------------------
+    coordinates = [(DEPOT_LATITUDE, DEPOT_LONGITUDE)]
+    for order in routable_orders:
+        coordinates.append((order.latitude, order.longitude))
+
+    # ------------------------------------------------------------------
+    # 3 ─ Build distance matrix (metres, integers)
+    # ------------------------------------------------------------------
+    distance_matrix = create_distance_matrix(coordinates)
+
+    # ------------------------------------------------------------------
+    # 4 ─ Prepare demand & capacity vectors (grams, integers)
+    #     OR-Tools requires integer arithmetic.  Converting kg → grams
+    #     preserves one decimal-place precision while staying in int range.
+    # ------------------------------------------------------------------
+    demands = [0]  # depot has zero demand
+    for order in routable_orders:
+        demands.append(int(round(order.weight * 1000)))
+
+    vehicle_capacity_g = int(round(payload.vehicle_capacity * 1000))
+    vehicle_capacities = [vehicle_capacity_g] * payload.num_vehicles
+
+    # ------------------------------------------------------------------
+    # 5 ─ Solve CVRP
+    # ------------------------------------------------------------------
+    result = solve_cvrp(
+        distance_matrix=distance_matrix,
+        demands=demands,
+        num_vehicles=payload.num_vehicles,
+        vehicle_capacities=vehicle_capacities,
+    )
+
+    logger.info(
+        "CVRP result – status=%s  total_distance=%s m  dropped=%s node(s).",
+        result["status"],
+        result["total_distance_m"],
+        len(result["dropped"]),
+    )
+
+    if result["status"] == "NO_SOLUTION":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="OR-Tools could not find any feasible solution for the given fleet parameters.",
+        )
+
+    # ------------------------------------------------------------------
+    # 6 ─ Map solver node indices back to Order objects
+    #     node 0 = depot  →  node i  →  routable_orders[i - 1]
+    # ------------------------------------------------------------------
+    dropped_node_set = set(result["dropped"])
+
+    # Collect routed order IDs so we can update their status
+    routed_order_ids: List[int] = []
+
+    vehicle_routes = []
+    for route in result["routes"]:
+        route_order_details = []
+        for node_index in route["route_nodes"]:
+            if node_index == 0:
+                # Depot node – include it for route clarity
+                route_order_details.append({
+                    "node":  "DEPOT",
+                    "lat":   DEPOT_LATITUDE,
+                    "lon":   DEPOT_LONGITUDE,
+                })
+            else:
+                order = routable_orders[node_index - 1]
+                route_order_details.append({
+                    "node":          node_index,
+                    "order_id":      order.id,
+                    "customer_name": order.customer_name,
+                    "raw_address":   order.raw_address,
+                    "weight_kg":     order.weight,
+                    "lat":           order.latitude,
+                    "lon":           order.longitude,
+                })
+                routed_order_ids.append(order.id)
+
+        vehicle_routes.append({
+            "vehicle":          route["vehicle"],
+            "stops":            route_order_details,
+            "route_distance_m": route["route_distance_m"],
+        })
+
+    # ------------------------------------------------------------------
+    # 7 ─ Transition routed orders → ROUTED
+    # ------------------------------------------------------------------
+    for order in routable_orders:
+        # Only update if the order was not dropped
+        order_node_index = routable_orders.index(order) + 1
+        if order_node_index not in dropped_node_set:
+            order.status = OrderStatus.ROUTED
+
+    db.commit()
+
+    # ------------------------------------------------------------------
+    # 8 ─ Build unassigned (dropped) list
+    # ------------------------------------------------------------------
+    unassigned = []
+    for node_index in sorted(dropped_node_set):
+        order = routable_orders[node_index - 1]
+        unassigned.append({
+            "order_id":      order.id,
+            "customer_name": order.customer_name,
+            "raw_address":   order.raw_address,
+            "weight_kg":     order.weight,
+            "reason":        "Dropped by solver – insufficient fleet capacity.",
+        })
+
+    logger.info(
+        "Route generation complete – %s order(s) routed, %s dropped.",
+        len(routed_order_ids), len(unassigned),
+    )
+
+    return {
+        "status":           result["status"],
+        "total_distance_m": result["total_distance_m"],
+        "num_vehicles_used": sum(
+            1 for r in vehicle_routes if len(r["stops"]) > 2
+        ),
+        "routes":           vehicle_routes,
+        "unassigned_orders": unassigned,
+    }
+
