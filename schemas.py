@@ -53,6 +53,27 @@ class OrderCreate(BaseModel):
     )
 
 
+class OrderUpdate(BaseModel):
+    """Payload accepted by PATCH /orders/{id} to update order attributes."""
+
+    customer_name: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=255,
+        description="Updated customer name.",
+    )
+    raw_address: str | None = Field(
+        default=None,
+        min_length=1,
+        description="Updated address. Modifying address will trigger re-geocoding.",
+    )
+    weight: float | None = Field(
+        default=None,
+        gt=0,
+        description="Updated weight in kilograms.",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Response schema
 # ---------------------------------------------------------------------------

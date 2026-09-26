@@ -30,7 +30,7 @@ from sqlalchemy.orm import Session
 
 from database import Base, SessionLocal, engine, get_db
 from models import Order, OrderStatus
-from schemas import OrderCreate, OrderResponse, RouteGenerationRequest, OrderResolve
+from schemas import OrderCreate, OrderUpdate, OrderResponse, RouteGenerationRequest, OrderResolve
 from utils import create_distance_matrix
 from routing import solve_cvrp
 
@@ -381,6 +381,125 @@ def list_anomalies(db: Session = Depends(get_db)) -> list[Order]:
         .order_by(Order.created_at.desc())
         .all()
     )
+
+
+@app.post(
+    "/orders",
+    response_model=OrderResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a single order",
+    description="Creates a new order, persists it as PENDING, and dispatches background geocoding.",
+)
+def create_single_order(
+    payload: OrderCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+) -> Order:
+    """Create a single order and dispatch geocoding task."""
+    order = Order(
+        customer_name=payload.customer_name,
+        raw_address=payload.raw_address,
+        weight=payload.weight,
+        status=OrderStatus.PENDING,
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+
+    logger.info("Single order created (id=%s). Geocoding dispatched.", order.id)
+    background_tasks.add_task(_process_orders_geocoding, [order.id])
+    return order
+
+
+@app.delete(
+    "/orders/{order_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete an order",
+    description="Permanently deletes an order from the database.",
+)
+def delete_order(order_id: int, db: Session = Depends(get_db)) -> None:
+    """Delete order by primary key."""
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Order with id={order_id} not found.",
+        )
+    db.delete(order)
+    db.commit()
+    logger.info("Order id=%s deleted successfully.", order_id)
+
+
+@app.patch(
+    "/orders/{order_id}",
+    response_model=OrderResponse,
+    summary="Update order details",
+    description="Updates order attributes. If the address is modified, status resets to PENDING and re-geocoding is triggered.",
+)
+def update_order(
+    order_id: int,
+    payload: OrderUpdate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+) -> Order:
+    """Update order attributes and re-geocode if address changed."""
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Order with id={order_id} not found.",
+        )
+
+    address_changed = False
+    if payload.customer_name is not None:
+        order.customer_name = payload.customer_name
+    if payload.weight is not None:
+        order.weight = payload.weight
+    if payload.raw_address is not None and payload.raw_address != order.raw_address:
+        order.raw_address = payload.raw_address
+        order.status = OrderStatus.PENDING
+        order.latitude = None
+        order.longitude = None
+        order.place_rank = None
+        address_changed = True
+
+    db.commit()
+    db.refresh(order)
+
+    if address_changed:
+        logger.info("Order id=%s address changed. Re-geocoding dispatched.", order_id)
+        background_tasks.add_task(_process_orders_geocoding, [order.id])
+
+    return order
+
+
+@app.post(
+    "/orders/{order_id}/regeocode",
+    response_model=OrderResponse,
+    summary="Retry geocoding for an order",
+    description="Resets order status to PENDING and triggers background geocoding again.",
+)
+def regeocode_order(
+    order_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+) -> Order:
+    """Reset order to PENDING and trigger geocoding worker."""
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Order with id={order_id} not found.",
+        )
+
+    order.status = OrderStatus.PENDING
+    db.commit()
+    db.refresh(order)
+
+    logger.info("Order id=%s re-geocoding requested.", order_id)
+    background_tasks.add_task(_process_orders_geocoding, [order.id])
+    return order
+
 
 
 # ---------------------------------------------------------------------------

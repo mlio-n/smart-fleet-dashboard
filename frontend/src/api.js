@@ -7,6 +7,18 @@ export const fetchOrders = (status) =>
 
 export const fetchStats = () => api.get('/orders/stats').then((r) => r.data);
 
+export const createOrder = (payload) =>
+  api.post('/orders', payload).then((r) => r.data);
+
+export const deleteOrder = (orderId) =>
+  api.delete(`/orders/${orderId}`).then((r) => r.data);
+
+export const updateOrder = (orderId, payload) =>
+  api.patch(`/orders/${orderId}`, payload).then((r) => r.data);
+
+export const regeocodeOrder = (orderId) =>
+  api.post(`/orders/${orderId}/regeocode`).then((r) => r.data);
+
 export const resolveAnomaly = (orderId, payload) =>
   api.patch(`/orders/${orderId}/resolve`, payload).then((r) => r.data);
 
