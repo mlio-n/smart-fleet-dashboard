@@ -81,11 +81,49 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ---------------------------------------------------------------------------
+# Health Check & Statistics
+# ---------------------------------------------------------------------------
+
+@app.get(
+    "/health",
+    summary="Health check",
+    tags=["system"],
+)
+def health_check() -> dict:
+    """Simple liveness probe."""
+    return {"status": "ok"}
+
+
+@app.get(
+    "/orders/stats",
+    summary="Order statistics by status",
+    description="Returns a count of orders grouped by their lifecycle status.",
+    tags=["orders"],
+)
+def order_stats(db: Session = Depends(get_db)) -> dict:
+    """Aggregate order counts per status for the dashboard stats bar."""
+    from sqlalchemy import func
+
+    rows = (
+        db.query(Order.status, func.count(Order.id))
+        .group_by(Order.status)
+        .all()
+    )
+
+    stats = {s.value: 0 for s in OrderStatus}
+    for order_status, count in rows:
+        stats[order_status.value] = count
+
+    stats["total"] = sum(stats.values())
+    return stats
+
 
 # ---------------------------------------------------------------------------
 # Nominatim geocoding constants
@@ -296,13 +334,21 @@ def create_orders_batch(
     "/orders",
     response_model=list[OrderResponse],
     summary="List all orders",
-    description="Returns all orders in the system, newest first.",
+    description="Returns all orders in the system, newest first. Optionally filter by status.",
 )
 def list_orders(
+    status: str | None = None,
     db: Session = Depends(get_db),
 ) -> list[Order]:
-    """Return every order sorted by creation date descending."""
-    return db.query(Order).order_by(Order.created_at.desc()).all()
+    """Return orders sorted by creation date descending, optionally filtered by status."""
+    query = db.query(Order)
+    if status:
+        try:
+            status_enum = OrderStatus(status)
+            query = query.filter(Order.status == status_enum)
+        except ValueError:
+            pass
+    return query.order_by(Order.created_at.desc()).all()
 
 
 @app.get(
