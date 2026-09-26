@@ -6,7 +6,7 @@ All other modules import `SessionLocal` and `Base` from here.
 """
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 # SQLite database file will be created in the project root.
 DATABASE_URL = "sqlite:///./smart_fleet.db"
@@ -31,7 +31,10 @@ class Base(DeclarativeBase):
     pass
 
 
-def get_db():
+from collections.abc import Generator
+
+
+def get_db() -> Generator[Session, None, None]:
     """
     FastAPI dependency that yields a database session and guarantees
     the session is closed after the request finishes, even on errors.

@@ -11,7 +11,6 @@ Separation of concerns:
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -74,18 +73,18 @@ class OrderResponse(BaseModel):
     status: OrderStatus
 
     # Geocoding results
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    place_rank: Optional[int] = None
+    latitude: float | None = None
+    longitude: float | None = None
+    place_rank: int | None = None
 
     # Original coordinates (pre-correction audit trail)
-    original_latitude: Optional[float] = None
-    original_longitude: Optional[float] = None
+    original_latitude: float | None = None
+    original_longitude: float | None = None
 
     # Support resolution audit trail
-    resolved_by: Optional[str] = None
-    resolved_at: Optional[datetime] = None
-    support_note: Optional[str] = None
+    resolved_by: str | None = None
+    resolved_at: datetime | None = None
+    support_note: str | None = None
 
     # Anomaly tracking
     was_anomalous: bool
@@ -175,7 +174,7 @@ class OrderResolve(BaseModel):
         examples=["support.agent.42"],
     )
 
-    support_note: Optional[str] = Field(
+    support_note: str | None = Field(
         default=None,
         description=(
             "Optional free-text note explaining the correction "

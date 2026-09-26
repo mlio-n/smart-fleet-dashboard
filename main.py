@@ -19,8 +19,9 @@ Architecture highlights
 
 import time
 import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import List
 
 import requests
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, status
@@ -44,6 +45,22 @@ logging.basicConfig(
 logger = logging.getLogger("smart_fleet")
 
 # ---------------------------------------------------------------------------
+# Lifespan – replaces deprecated @app.on_event("startup")
+# ---------------------------------------------------------------------------
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """
+    Create all database tables defined in the ORM models if they do not
+    already exist. This is idempotent and safe to run on every restart.
+    """
+    logger.info("Running database migrations (create_all) …")
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database tables ready.")
+    yield
+
+
+# ---------------------------------------------------------------------------
 # Application bootstrap
 # ---------------------------------------------------------------------------
 
@@ -55,6 +72,7 @@ app = FastAPI(
         "automatically flagged as anomalies for manual review."
     ),
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # ---------------------------------------------------------------------------
@@ -68,18 +86,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-def on_startup() -> None:
-    """
-    Create all database tables defined in the ORM models if they do not
-    already exist. This is idempotent and safe to run on every restart.
-    """
-    logger.info("Running database migrations (create_all) …")
-    Base.metadata.create_all(bind=engine)
-    logger.info("Database tables ready.")
-
 
 # ---------------------------------------------------------------------------
 # Nominatim geocoding constants
@@ -103,7 +109,7 @@ DEPOT_LONGITUDE = 29.0864
 # Background geocoding worker
 # ---------------------------------------------------------------------------
 
-def _process_orders_geocoding(order_ids: List[int]) -> None:
+def _process_orders_geocoding(order_ids: list[int]) -> None:
     """
     Background task: geocode each order via Nominatim and apply business rules.
 
@@ -226,7 +232,7 @@ def _process_orders_geocoding(order_ids: List[int]) -> None:
     ),
 )
 def create_orders_batch(
-    payload:          List[OrderCreate],
+    payload:          list[OrderCreate],
     background_tasks: BackgroundTasks,
     db:               Session = Depends(get_db),
 ) -> dict:
@@ -248,7 +254,7 @@ def create_orders_batch(
     # ------------------------------------------------------------------
     # Step 1 – Persist all orders synchronously before returning
     # ------------------------------------------------------------------
-    new_orders: List[Order] = []
+    new_orders: list[Order] = []
 
     for item in payload:
         order = Order(
@@ -288,13 +294,13 @@ def create_orders_batch(
 
 @app.get(
     "/orders",
-    response_model=List[OrderResponse],
+    response_model=list[OrderResponse],
     summary="List all orders",
     description="Returns all orders in the system, newest first.",
 )
 def list_orders(
     db: Session = Depends(get_db),
-) -> List[Order]:
+) -> list[Order]:
     """Return every order sorted by creation date descending."""
     return db.query(Order).order_by(Order.created_at.desc()).all()
 
@@ -317,11 +323,11 @@ def get_order(order_id: int, db: Session = Depends(get_db)) -> Order:
 
 @app.get(
     "/orders/anomalies/",
-    response_model=List[OrderResponse],
+    response_model=list[OrderResponse],
     summary="List all anomalous orders",
     description="Returns all orders currently in ANOMALY status for support review.",
 )
-def list_anomalies(db: Session = Depends(get_db)) -> List[Order]:
+def list_anomalies(db: Session = Depends(get_db)) -> list[Order]:
     """Return all orders whose current status is ANOMALY."""
     return (
         db.query(Order)
@@ -368,7 +374,7 @@ def generate_routes(
     # ------------------------------------------------------------------
     routable_statuses = [OrderStatus.PENDING, OrderStatus.RESOLVED_MANUALLY]
 
-    routable_orders: List[Order] = (
+    routable_orders: list[Order] = (
         db.query(Order)
         .filter(
             Order.status.in_(routable_statuses),
@@ -445,7 +451,7 @@ def generate_routes(
     dropped_node_set = set(result["dropped"])
 
     # Collect routed order IDs so we can update their status
-    routed_order_ids: List[int] = []
+    routed_order_ids: list[int] = []
 
     vehicle_routes = []
     for route in result["routes"]:
@@ -480,9 +486,9 @@ def generate_routes(
     # ------------------------------------------------------------------
     # 7 ─ Transition routed orders → ROUTED
     # ------------------------------------------------------------------
-    for order in routable_orders:
+    for idx, order in enumerate(routable_orders):
         # Only update if the order was not dropped
-        order_node_index = routable_orders.index(order) + 1
+        order_node_index = idx + 1
         if order_node_index not in dropped_node_set:
             order.status = OrderStatus.ROUTED
 
