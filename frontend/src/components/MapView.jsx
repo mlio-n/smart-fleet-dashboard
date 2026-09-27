@@ -157,6 +157,22 @@ function CourierNavigationFocus({ isNavigating, courierPosition }) {
   return null;
 }
 
+// Automatically recalculates map dimensions during smooth sidebar slide animations
+function AutoResizeMap({ isNavigating }) {
+  const map = useMap();
+  useEffect(() => {
+    const t1 = setTimeout(() => map.invalidateSize(), 100);
+    const t2 = setTimeout(() => map.invalidateSize(), 300);
+    const t3 = setTimeout(() => map.invalidateSize(), 550);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [isNavigating, map]);
+  return null;
+}
+
 export default function MapView({
   orders,
   selectedOrder,
@@ -225,6 +241,7 @@ export default function MapView({
       <FlyToSelected selected={selectedOrder} isNavigating={isNavigating} />
       <AutoFitRoute routes={routes} isNavigating={isNavigating} />
       <CourierNavigationFocus isNavigating={isNavigating} courierPosition={courierPosition} />
+      <AutoResizeMap isNavigating={isNavigating} />
 
       {/* Main Depot / Distribution Centre Marker */}
       <Marker position={MAP_CENTER} icon={DEPOT_ICON}>

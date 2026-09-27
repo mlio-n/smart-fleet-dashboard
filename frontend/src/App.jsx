@@ -235,18 +235,25 @@ export default function App() {
         isResizing ? 'select-none cursor-col-resize' : ''
       }`}
     >
-      {/* Top Clean Header & Stats (Hidden in Navigation Mode) */}
-      {!isNavigating && (
+      {/* Top Clean Header & Stats (Slides smoothly on Navigation Mode) */}
+      <div
+        className={`transition-all duration-500 ease-in-out transform ${
+          isNavigating
+            ? '-translate-y-full max-h-0 opacity-0 pointer-events-none'
+            : 'translate-y-0 max-h-28 opacity-100'
+        }`}
+      >
         <StatsBar stats={stats} activeFilter={statusFilter} onFilter={setStatusFilter} />
-      )}
+      </div>
 
       <div className="flex flex-1 overflow-hidden relative">
-        {/* ── Resizable Sidebar (Hidden in Navigation Mode) ─────── */}
-        {!isNavigating && (
-          <aside
-            style={{ width: `${sidebarWidth}px` }}
-            className="flex-shrink-0 flex flex-col bg-gray-50/50 border-r border-gray-200/80 relative transition-none backdrop-blur-xs"
-          >
+        {/* ── Resizable Sidebar (Smooth Slide-out Animation) ─────── */}
+        <aside
+          style={{ width: isNavigating ? '0px' : `${sidebarWidth}px` }}
+          className={`flex-shrink-0 flex flex-col bg-gray-50/50 border-r border-gray-200/80 relative backdrop-blur-xs transition-all duration-500 ease-in-out overflow-hidden ${
+            isNavigating ? '-translate-x-12 opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'
+          }`}
+        >
             {/* Header */}
             <div
               style={{ padding: `${paddingScaled}px` }}
@@ -370,18 +377,15 @@ export default function App() {
               onStartJourney={handleStartJourney}
             />
           </aside>
-        )}
 
-        {/* ── Resizer Drag Bar (Hidden in Navigation Mode) ─────── */}
-        {!isNavigating && (
-          <div
-            onMouseDown={startResizing}
-            className={`w-1.5 hover:w-2 bg-zinc-200 hover:bg-green-600 cursor-col-resize select-none transition-all flex-shrink-0 z-30 ${
-              isResizing ? 'bg-green-700 w-2' : ''
-            }`}
-            title="Paneli genişletmek/daraltmak için sürükleyin"
-          />
-        )}
+        {/* ── Resizer Drag Bar with Smooth Collapse ─────── */}
+        <div
+          onMouseDown={isNavigating ? undefined : startResizing}
+          className={`w-1.5 hover:w-2 bg-zinc-200 hover:bg-green-600 cursor-col-resize select-none transition-all duration-500 flex-shrink-0 z-30 ${
+            isResizing ? 'bg-green-700 w-2' : ''
+          } ${isNavigating ? 'w-0 opacity-0 pointer-events-none' : 'opacity-100'}`}
+          title="Paneli genişletmek/daraltmak için sürükleyin"
+        />
 
         {/* ── Map Area (Full Screen in Navigation Mode) ────────── */}
         <main className="flex-1 relative bg-gray-100 h-full w-full">
@@ -394,9 +398,24 @@ export default function App() {
             deliveryStops={deliveryStops}
           />
 
-          {/* ── Floating Driver HUD (Heads-Up Display) ─────────── */}
+          {/* ── Floating Driver HUD (Ultra-Glassmorphic Display) ─────────── */}
           {isNavigating && (
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] bg-white/98 backdrop-blur-md shadow-2xl rounded-3xl p-8 w-11/12 max-w-xl border-2 border-zinc-200 animate-in fade-in zoom-in-95 duration-200">
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] bg-white/85 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] rounded-3xl p-7 w-11/12 max-w-xl border border-white/60 animate-in fade-in slide-in-from-top-10 zoom-in-95 duration-500 ease-out">
+              {/* Glass specular top reflection highlight */}
+              <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />
+
+              {/* Total Route Mini Banner */}
+              {routes?.total_distance_m && (
+                <div className="flex items-center justify-between text-[11px] font-bold text-zinc-600 bg-zinc-100/80 backdrop-blur-xs rounded-xl px-3 py-1.5 mb-3.5 border border-zinc-200/60">
+                  <span className="flex items-center gap-1.5 text-green-900 font-extrabold">
+                    <span className="w-2 h-2 rounded-full bg-green-600 inline-block animate-pulse"></span>
+                    Optimum Dağıtım Rotası
+                  </span>
+                  <span className="font-black text-black">
+                    {(routes.total_distance_m / 1000).toFixed(1)} km · ~{Math.round(((routes.total_distance_m) / 1000) * 2.2)} dk · {deliveryStops.length} Durak
+                  </span>
+                </div>
+              )}
               {currentStopIndex >= deliveryStops.length ? (
                 /* Route Completed Screen */
                 <div className="text-center py-4">

@@ -19,6 +19,7 @@ export default function RoutePanel({ onRoutesGenerated, onStartJourney, scale = 
       });
       setResult(data);
       onRoutesGenerated?.(data);
+      onStartJourney?.(data);
     } catch (err) {
       setError(err.response?.data?.detail || 'Rota optimizasyonu başarısız oldu.');
     } finally {
