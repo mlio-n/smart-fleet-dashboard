@@ -175,24 +175,28 @@ export default function NewOrderModal({ onClose, onCreated }) {
           </button>
         </div>
 
-        {/* Live In-Modal Feedback Notification */}
-        {notification && (
-          <div
-            className={`mb-4 rounded-xl p-3 text-xs font-bold border-2 transition animate-in fade-in duration-150 ${
-              notification.type === 'success'
-                ? 'bg-green-100 border-green-300 text-green-900'
-                : 'bg-amber-100 border-amber-300 text-amber-900'
-            }`}
-          >
-            {notification.text}
-          </div>
-        )}
-
-        {error && (
-          <div className="mb-4 rounded-xl bg-red-50 border-2 border-red-200 p-3 text-xs text-red-700 font-bold">
-            {error}
-          </div>
-        )}
+        {/* Fixed-Height Feedback Slot (Prevents layout shift & button jump) */}
+        <div className="h-12 mb-4 flex items-center">
+          {error ? (
+            <div className="w-full h-full flex items-center px-3.5 rounded-xl text-xs font-bold border-2 bg-red-50 border-red-200 text-red-700 truncate animate-in fade-in duration-150">
+              <span className="truncate">{error}</span>
+            </div>
+          ) : notification ? (
+            <div
+              className={`w-full h-full flex items-center px-3.5 rounded-xl text-xs font-bold border-2 transition-all duration-200 truncate animate-in fade-in duration-150 ${
+                notification.type === 'success'
+                  ? 'bg-green-100 border-green-300 text-green-900'
+                  : 'bg-amber-100 border-amber-300 text-amber-900'
+              }`}
+            >
+              <span className="truncate">{notification.text}</span>
+            </div>
+          ) : (
+            <div className="w-full h-full flex items-center px-3.5 rounded-xl text-xs font-medium text-zinc-400 border border-dashed border-zinc-200 bg-zinc-50/60">
+              <span>Hızlı sipariş eklemek için yukarıdaki butonları kullanabilirsiniz.</span>
+            </div>
+          )}
+        </div>
 
         <label className="block mb-3.5">
           <span className="text-xs font-black text-black">Müşteri Adı Soyadı</span>
