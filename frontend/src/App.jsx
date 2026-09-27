@@ -247,33 +247,33 @@ export default function App() {
         />
       </div>
 
-      {/* ── Top Clean Header & Stats (Slides smoothly on Navigation Mode) ── */}
+      {/* ── Top Floating Glass Island (iOS Style) ── */}
       <div
-        className={`absolute top-0 inset-x-0 z-30 transition-all duration-500 ease-in-out transform ${
+        className={`absolute top-3.5 inset-x-4 z-30 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
           isNavigating
-            ? '-translate-y-full opacity-0 pointer-events-none'
+            ? '-translate-y-32 opacity-0 pointer-events-none'
             : 'translate-y-0 opacity-100'
         }`}
       >
         <StatsBar stats={stats} activeFilter={statusFilter} onFilter={setStatusFilter} />
       </div>
 
-      {/* ── Resizable Glassmorphic Sidebar Floating Over Map ─── */}
+      {/* ── Resizable Glassmorphic Sidebar Floating Over Map (iOS Island Sheet) ─── */}
       <aside
         style={{
           width: `${sidebarWidth}px`,
-          top: '88px',
-          bottom: '0px',
-          left: '0px',
+          top: '86px',
+          bottom: '14px',
+          left: '16px',
         }}
-        className={`absolute z-20 flex flex-col glass-panel !border-t-0 !border-l-0 !border-b-0 !border-r !rounded-none transition-all duration-500 ease-in-out overflow-hidden shadow-2xl pointer-events-auto ${
-          isNavigating ? '-translate-x-full opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'
+        className={`absolute z-20 flex flex-col glass-panel rounded-3xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden shadow-[0_20px_50px_-10px_rgba(0,0,0,0.18)] pointer-events-auto ${
+          isNavigating ? '-translate-x-[120%] opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'
         }`}
       >
         {/* Header */}
         <div
           style={{ padding: `${paddingScaled}px` }}
-          className="glass-panel-subtle !border-t-0 !border-x-0 !border-b !rounded-none shadow-xs relative"
+          className="glass-panel-subtle !border-t-0 !border-x-0 !border-b rounded-t-3xl shadow-xs relative"
         >
           {/* Specular highlight */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />
@@ -400,23 +400,23 @@ export default function App() {
       <div
         onMouseDown={isNavigating ? undefined : startResizing}
         style={{
-          left: `${sidebarWidth}px`,
-          top: '88px',
-          bottom: '0px',
+          left: `${sidebarWidth + 20}px`,
+          top: '86px',
+          bottom: '14px',
         }}
-        className={`absolute w-2 cursor-col-resize z-25 transition-all duration-500 hover:bg-green-600/60 ${
+        className={`absolute w-2 cursor-col-resize z-25 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-green-600/70 rounded-full flex items-center justify-center ${
           isResizing ? 'bg-green-700/80 w-2.5' : 'bg-transparent'
         } ${isNavigating ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         title="Paneli genişletmek/daraltmak için sürükleyin"
       />
 
-      {/* ── Floating Driver HUD (Ultra-Glassmorphic Display) ─────────── */}
+      {/* ── Floating Driver HUD (VisionOS / Dynamic Island Style) ─────────── */}
       {isNavigating && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[2000] glass-panel rounded-3xl p-7 w-11/12 max-w-xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] animate-in fade-in slide-in-from-top-10 zoom-in-95 duration-500 ease-out overflow-hidden pointer-events-auto">
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[2000] glass-panel rounded-[28px] p-7 w-11/12 max-w-xl shadow-[0_25px_70px_-15px_rgba(0,0,0,0.35)] animate-in fade-in slide-in-from-top-12 zoom-in-95 duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden pointer-events-auto">
           {/* Glass specular top reflection highlight */}
           <div className="absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none" />
           {/* Subtle glass sheen overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-white/5 pointer-events-none rounded-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/35 via-white/5 to-transparent pointer-events-none rounded-[28px]" />
 
           {/* Total Route Mini Banner */}
           {routes?.total_distance_m && (
@@ -511,7 +511,7 @@ export default function App() {
               {/* Mark Delivered Button */}
               <button
                 onClick={handleMarkDelivered}
-                className="w-full rounded-2xl bg-green-700 hover:bg-green-800 text-white font-black py-4 text-base shadow-xl shadow-green-900/25 transition cursor-pointer flex items-center justify-center gap-2 active:scale-98"
+                className="w-full rounded-2xl bg-gradient-to-r from-green-700 to-green-800 hover:from-green-600 hover:to-green-700 text-white font-black py-4 text-base shadow-xl shadow-green-900/30 transition-all duration-200 apple-spring cursor-pointer flex items-center justify-center gap-2 active:scale-[0.98]"
               >
                 <span>Teslim Edildi</span>
               </button>

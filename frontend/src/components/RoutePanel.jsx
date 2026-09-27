@@ -39,7 +39,7 @@ export default function RoutePanel({ onRoutesGenerated, onStartJourney, scale = 
   return (
     <div
       style={{ padding: `${pad}px` }}
-      className="sticky bottom-0 glass-panel !border-b-0 !border-x-0 !border-t !rounded-none shadow-[0_-4px_20px_rgba(0,0,0,0.04)] z-10"
+      className="sticky bottom-0 glass-panel-subtle !border-b-0 !border-x-0 !border-t rounded-b-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.04)] z-10"
     >
       <button
         onClick={handleGenerate}
@@ -47,9 +47,9 @@ export default function RoutePanel({ onRoutesGenerated, onStartJourney, scale = 
         style={{
           fontSize: `${buttonSize}px`,
           padding: `${Math.round(9 * scale)}px ${Math.round(14 * scale)}px`,
-          borderRadius: `${Math.round(8 * scale)}px`,
+          borderRadius: `${Math.round(10 * scale)}px`,
         }}
-        className="w-full bg-green-700 font-extrabold text-white hover:bg-green-800 disabled:opacity-50 transition cursor-pointer flex items-center justify-center gap-2 shadow-xs active:scale-98"
+        className="w-full bg-gradient-to-r from-green-700 to-green-800 hover:from-green-600 hover:to-green-700 font-extrabold text-white disabled:opacity-50 transition-all duration-200 apple-spring cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-green-900/20 active:scale-[0.98]"
       >
         {loading ? (
           <span>Rotalar Hesaplanıyor...</span>

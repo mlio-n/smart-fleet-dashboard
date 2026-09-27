@@ -45,26 +45,75 @@
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
 }
 
-/* ── Ultra-Glassmorphic Utility Classes ── */
+/* ── Apple iOS Liquid / Frosted Glass Material ── */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.62) !important;
-  backdrop-filter: blur(22px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(22px) saturate(190%) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.8) !important;
-  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.18), 0 2px 10px rgba(0, 0, 0, 0.05) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(255, 255, 255, 0.48) 100%
+  ) !important;
+  backdrop-filter: blur(30px) saturate(210%) contrast(102%) brightness(103%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(210%) contrast(102%) brightness(103%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.65) !important;
+  box-shadow: 
+    0 16px 40px -10px rgba(0, 0, 0, 0.12),
+    0 2px 6px 0 rgba(0, 0, 0, 0.04),
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 1px 0 rgba(255, 255, 255, 0.25) !important;
 }
 
 .glass-panel-subtle {
-  background: rgba(255, 255, 255, 0.45) !important;
-  backdrop-filter: blur(14px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.65) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.52) 0%,
+    rgba(255, 255, 255, 0.35) 100%
+  ) !important;
+  backdrop-filter: blur(18px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 
+    0 4px 14px -2px rgba(0, 0, 0, 0.05),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.85) !important;
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.65) !important;
-  backdrop-filter: blur(16px) saturate(170%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(170%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    rgba(255, 255, 255, 0.52) 100%
+  ) !important;
+  backdrop-filter: blur(20px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow: 
+    0 8px 24px -4px rgba(0, 0, 0, 0.08),
+    0 1px 3px 0 rgba(0, 0, 0, 0.03),
+    inset 0 1px 1.2px 0 rgba(255, 255, 255, 0.95) !important;
 }
+
+/* Apple Smooth Springs & Transitions */
+.apple-spring {
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* iOS Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+  backdrop-filter: blur(4px);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
 

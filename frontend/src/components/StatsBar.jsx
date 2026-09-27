@@ -8,15 +8,15 @@ const CARDS = [
 
 export default function StatsBar({ stats, onFilter, activeFilter }) {
   return (
-    <header className="flex items-center justify-between px-8 py-5 glass-panel !border-t-0 !border-x-0 !border-b !rounded-none z-20 relative">
+    <header className="flex items-center justify-between px-7 py-3.5 glass-panel rounded-2xl z-20 relative shadow-[0_16px_40px_-10px_rgba(0,0,0,0.15)]">
       {/* Specular top reflection highlight */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none" />
 
       {/* Brand & Denizlispor Green/Black Logo */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-black text-green-500 shadow-lg border-2 border-green-600 shrink-0">
+      <div className="flex items-center gap-3.5">
+        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-black text-green-500 shadow-lg border-2 border-green-600 shrink-0">
           <svg
-            className="w-8 h-8 text-green-500"
+            className="w-7 h-7 text-green-500"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -33,18 +33,18 @@ export default function StatsBar({ stats, onFilter, activeFilter }) {
         </div>
 
         <div>
-          <h1 className="text-2xl font-black text-black tracking-tight leading-none flex items-center gap-2">
+          <h1 className="text-xl font-black text-black tracking-tight leading-none flex items-center gap-1.5">
             Smart Fleet
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-600"></span>
+            <span className="inline-block w-2 h-2 rounded-full bg-green-600"></span>
           </h1>
-          <p className="text-sm text-zinc-600 font-semibold mt-1.5">
+          <p className="text-xs text-zinc-600 font-semibold mt-1">
             Lojistik Operasyon & Rota Yönetimi
           </p>
         </div>
       </div>
 
       {/* Metric Filter Buttons with Glassmorphic polish */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         {CARDS.map(({ key, label, textColor, bgColor }) => {
           const isActive = activeFilter === (key === 'total' ? null : key);
           const count = stats[key] ?? 0;
@@ -53,14 +53,14 @@ export default function StatsBar({ stats, onFilter, activeFilter }) {
             <button
               key={key}
               onClick={() => onFilter(key === 'total' ? null : key)}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border backdrop-blur-md transition-all duration-200 cursor-pointer ${
+              className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border backdrop-blur-md transition-all duration-200 apple-spring cursor-pointer active:scale-95 ${
                 isActive
                   ? `${bgColor} font-black ring-2 ring-green-600 shadow-md scale-102`
-                  : 'bg-white/60 border-zinc-200/80 text-zinc-800 hover:bg-white/90 hover:border-zinc-300 hover:shadow-xs'
+                  : 'glass-panel-subtle text-zinc-800 hover:bg-white/80 hover:shadow-xs'
               }`}
             >
-              <span className="text-xs font-bold text-zinc-500 uppercase tracking-wide">{label}:</span>
-              <span className={`text-xl font-black ${textColor}`}>{count}</span>
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wide">{label}:</span>
+              <span className={`text-lg font-black ${textColor}`}>{count}</span>
             </button>
           );
         })}
