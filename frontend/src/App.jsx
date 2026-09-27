@@ -8,7 +8,7 @@ import RoutePanel from './components/RoutePanel';
 import MapView from './components/MapView';
 
 const REFRESH_MS = 10_000;
-const MIN_SIDEBAR_WIDTH = 280;
+const MIN_SIDEBAR_WIDTH = 250;
 const MAX_SIDEBAR_WIDTH = 850;
 
 // Straight-line distance calculation helper (Haversine formula in km)
@@ -34,7 +34,6 @@ export default function App() {
   const [error, setError] = useState(null);
 
   const [statusFilter, setStatusFilter] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [resolveTarget, setResolveTarget] = useState(null);
   const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
@@ -44,8 +43,13 @@ export default function App() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
 
-  // ─── Resizable Sidebar State ─────────────────────────────────────
-  const [sidebarWidth, setSidebarWidth] = useState(380);
+  // ─── Resizable Sidebar State (Default 25%) ─────────────────────────
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return Math.round(window.innerWidth * 0.25);
+    }
+    return 380;
+  });
   const [isResizing, setIsResizing] = useState(false);
 
   // Proportional scaling factor relative to default width (380px)
@@ -138,18 +142,6 @@ export default function App() {
     }
   };
 
-  // Filter orders by text search
-  const filteredOrders = useMemo(() => {
-    if (!searchQuery.trim()) return orders;
-    const q = searchQuery.toLowerCase();
-    return orders.filter(
-      (o) =>
-        o.customer_name?.toLowerCase().includes(q) ||
-        o.raw_address?.toLowerCase().includes(q) ||
-        o.id.toString().includes(q)
-    );
-  }, [orders, searchQuery]);
-
   // ─── Navigation Stops & Distance ─────────────────────────────────
   const activeRoute = routes?.routes?.[0];
   const allStops = useMemo(() => activeRoute?.stops || [], [activeRoute]);
@@ -165,7 +157,7 @@ export default function App() {
   // Previous stop location for distance calculation
   const prevStop = useMemo(() => {
     if (currentStopIndex === 0) {
-      // First stop: origin is depot
+      // First stop: origin is depot (courier starting point)
       return allStops[0] || { lat: 37.7765, lon: 29.0864 };
     }
     return deliveryStops[currentStopIndex - 1] || allStops[0];
@@ -182,21 +174,12 @@ export default function App() {
     );
   }, [prevStop, currentTargetStop]);
 
-  // Start Navigation Journey
+  // Start Navigation Journey (Zooms directly to courier's center location)
   const handleStartJourney = (routeData) => {
     setRoutes(routeData);
     setIsNavigating(true);
     setCurrentStopIndex(0);
-    // Focus map on first customer
-    const firstStop = routeData?.routes?.[0]?.stops?.find((s) => s.node !== 'DEPOT');
-    if (firstStop) {
-      setSelectedOrder({
-        id: firstStop.order_id,
-        latitude: firstStop.lat,
-        longitude: firstStop.lon,
-        customer_name: firstStop.customer_name,
-      });
-    }
+    setSelectedOrder(null); // Lets MapView zoom directly to courier center
   };
 
   // Exit Navigation Mode
@@ -220,27 +203,12 @@ export default function App() {
 
     const nextIndex = currentStopIndex + 1;
     setCurrentStopIndex(nextIndex);
-
-    // Auto-focus map on next stop if available
-    const nextStop = deliveryStops[nextIndex];
-    if (nextStop) {
-      setSelectedOrder({
-        id: nextStop.order_id,
-        latitude: nextStop.lat,
-        longitude: nextStop.lon,
-        customer_name: nextStop.customer_name,
-      });
-    } else {
-      setSelectedOrder(null);
-    }
-
     refresh();
   };
 
   // Dynamic layout values based on scale
   const headerTitleSize = Math.round(14 * scale);
   const headerSubtitleSize = Math.round(11.5 * scale);
-  const searchInputSize = Math.round(12.5 * scale);
   const newOrderBtnSize = Math.round(12 * scale);
   const paddingScaled = Math.round(12 * scale);
   const listGap = Math.round(10 * scale);
@@ -264,7 +232,7 @@ export default function App() {
             style={{ width: `${sidebarWidth}px` }}
             className="flex-shrink-0 flex flex-col bg-gray-50/50 border-r border-gray-200/80 relative transition-none backdrop-blur-xs"
           >
-            {/* Header & Search */}
+            {/* Header */}
             <div
               style={{ padding: `${paddingScaled}px` }}
               className="bg-white border-b border-gray-200/80 shadow-xs"
@@ -272,17 +240,17 @@ export default function App() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2
-                    className="font-bold text-gray-800"
+                    className="font-bold text-black"
                     style={{ fontSize: `${headerTitleSize}px` }}
                   >
                     Sipariş Akışı
                   </h2>
                   <p
-                    className="text-gray-500"
+                    className="text-zinc-600 font-medium"
                     style={{ fontSize: `${headerSubtitleSize}px`, marginTop: `${Math.round(2 * scale)}px` }}
                   >
-                    {loading ? 'Yükleniyor...' : `${filteredOrders.length} sipariş gösteriliyor`}
-                    {statusFilter && <span className="font-semibold text-indigo-600"> · {statusFilter}</span>}
+                    {loading ? 'Yükleniyor...' : `${orders.length} sipariş gösteriliyor`}
+                    {statusFilter && <span className="font-semibold text-green-700"> · {statusFilter}</span>}
                   </p>
                 </div>
 
@@ -293,26 +261,10 @@ export default function App() {
                     padding: `${Math.round(5 * scale)}px ${Math.round(10 * scale)}px`,
                     borderRadius: `${Math.round(6 * scale)}px`,
                   }}
-                  className="flex items-center gap-1 bg-indigo-600 font-semibold text-white hover:bg-indigo-700 transition cursor-pointer shadow-xs"
+                  className="flex items-center gap-1 bg-green-700 hover:bg-green-800 font-bold text-white transition cursor-pointer shadow-xs active:scale-98"
                 >
                   <span>+</span> Yeni Sipariş
                 </button>
-              </div>
-
-              {/* Search Input */}
-              <div style={{ marginTop: `${Math.round(10 * scale)}px` }}>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Müşteri adı veya adres ara..."
-                  style={{
-                    fontSize: `${searchInputSize}px`,
-                    padding: `${Math.round(6 * scale)}px ${Math.round(10 * scale)}px`,
-                    borderRadius: `${Math.round(6 * scale)}px`,
-                  }}
-                  className="w-full border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none shadow-xs"
-                />
               </div>
             </div>
 
@@ -337,7 +289,7 @@ export default function App() {
                 </div>
               )}
 
-              {!loading && !error && filteredOrders.length === 0 && (
+              {!loading && !error && orders.length === 0 && (
                 <div
                   style={{
                     padding: `${Math.round(24 * scale)}px`,
@@ -355,12 +307,12 @@ export default function App() {
                     className="text-gray-400"
                     style={{ fontSize: `${headerSubtitleSize}px`, marginTop: `${Math.round(4 * scale)}px` }}
                   >
-                    Arama kriterlerinizi değiştirebilir veya yeni bir sipariş ekleyebilirsiniz.
+                    Yeni bir sipariş ekleyebilirsiniz.
                   </p>
                 </div>
               )}
 
-              {filteredOrders.map((order) => (
+              {orders.map((order) => (
                 <OrderCard
                   key={order.id}
                   order={order}
@@ -390,8 +342,8 @@ export default function App() {
         {!isNavigating && (
           <div
             onMouseDown={startResizing}
-            className={`w-1.5 hover:w-2 bg-gray-200 hover:bg-indigo-500 cursor-col-resize select-none transition-all flex-shrink-0 z-30 ${
-              isResizing ? 'bg-indigo-600 w-2' : ''
+            className={`w-1.5 hover:w-2 bg-zinc-200 hover:bg-green-600 cursor-col-resize select-none transition-all flex-shrink-0 z-30 ${
+              isResizing ? 'bg-green-700 w-2' : ''
             }`}
             title="Paneli genişletmek/daraltmak için sürükleyin"
           />
@@ -399,82 +351,89 @@ export default function App() {
 
         {/* ── Map Area (Full Screen in Navigation Mode) ────────── */}
         <main className="flex-1 relative bg-gray-100 h-full w-full">
-          <MapView orders={filteredOrders} selectedOrder={selectedOrder} routes={routes} />
+          <MapView
+            orders={orders}
+            selectedOrder={selectedOrder}
+            routes={routes}
+            isNavigating={isNavigating}
+          />
 
           {/* ── Floating Driver HUD (Heads-Up Display) ─────────── */}
           {isNavigating && (
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-6 w-11/12 max-w-md border border-gray-100 animate-in fade-in duration-300">
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-6 w-11/12 max-w-md border-2 border-zinc-200 animate-in fade-in duration-300">
               {currentStopIndex >= deliveryStops.length ? (
                 /* Route Completed Screen */
                 <div className="text-center py-2">
-                  <div className="text-4xl mb-2">🎉</div>
-                  <h3 className="text-xl font-extrabold text-gray-900 mb-1">
+                  <div className="w-12 h-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center mx-auto mb-3 border border-green-300">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-black text-black mb-1">
                     Rota Tamamlandı!
                   </h3>
-                  <p className="text-xs text-gray-600 mb-5 leading-relaxed">
+                  <p className="text-xs text-zinc-600 mb-5 leading-relaxed font-medium">
                     Tüm paketler teslim edildi. Depoya dönüş rotasını tamamlayabilir veya ana panele dönebilirsiniz.
                   </p>
                   <button
                     onClick={handleExitNavigation}
-                    className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 text-sm shadow-md transition cursor-pointer"
+                    className="w-full rounded-xl bg-black hover:bg-zinc-900 text-green-400 border border-green-600 font-black py-3 text-sm shadow-md transition cursor-pointer"
                   >
-                    🏁 Normal Görünüme Dön
+                    Normal Görünüme Dön
                   </button>
                 </div>
               ) : (
                 /* Active Driver Navigation HUD */
                 <div>
                   {/* Top Status & Exit Header */}
-                  <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-3">
+                  <div className="flex items-center justify-between border-b border-zinc-100 pb-3 mb-3">
                     <div className="flex items-center gap-2">
                       <span className="flex h-2.5 w-2.5 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-600"></span>
                       </span>
-                      <span className="text-xs font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md">
+                      <span className="text-xs font-black uppercase tracking-wider text-green-800 bg-green-100 border border-green-300 px-2.5 py-1 rounded-md">
                         Durak {currentStopIndex + 1} / {deliveryStops.length}
                       </span>
                     </div>
 
                     <button
                       onClick={handleExitNavigation}
-                      className="text-xs font-semibold text-gray-500 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition cursor-pointer"
+                      className="text-xs font-bold text-zinc-500 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition cursor-pointer"
                     >
-                      ✖ Sürüşten Çık
+                      Sürüşten Çık
                     </button>
                   </div>
 
                   {/* Target Customer Info */}
                   <div className="mb-4">
-                    <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wide">
                       Hedef Müşteri
                     </span>
-                    <h3 className="text-base font-extrabold text-gray-900 truncate mt-0.5">
+                    <h3 className="text-base font-black text-black truncate mt-0.5">
                       {currentTargetStop?.customer_name}
                     </h3>
-                    <p className="text-xs text-gray-600 leading-relaxed mt-1 line-clamp-2">
-                      📍 {currentTargetStop?.raw_address}
+                    <p className="text-xs text-zinc-600 font-medium leading-relaxed mt-1 line-clamp-2">
+                      {currentTargetStop?.raw_address}
                     </p>
 
-                    <div className="mt-3 flex items-center justify-between text-xs font-medium text-gray-600 bg-gray-50 rounded-xl p-3 border border-gray-100">
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs font-medium text-zinc-700 bg-zinc-50 rounded-xl p-3 border border-zinc-200">
                       <div>
-                        <span className="text-gray-400 text-[11px] block">Kalan Mesafe</span>
-                        <strong className="text-gray-900 font-bold text-sm">
+                        <span className="text-zinc-500 text-[10px] block font-bold uppercase">Mesafe</span>
+                        <strong className="text-black font-black text-sm">
                           {distanceToNextStop} km
                         </strong>
                       </div>
-                      <div className="w-px h-6 bg-gray-200"></div>
-                      <div>
-                        <span className="text-gray-400 text-[11px] block">Paket Ağırlığı</span>
-                        <strong className="text-gray-900 font-bold text-sm">
-                          {currentTargetStop?.weight_kg ?? 1} kg
+                      <div className="border-x border-zinc-200 px-1">
+                        <span className="text-zinc-500 text-[10px] block font-bold uppercase">Tahmini Varış</span>
+                        <strong className="text-green-700 font-black text-sm">
+                          ~{Math.max(1, Math.round(distanceToNextStop * 2.2))} dk
                         </strong>
                       </div>
-                      <div className="w-px h-6 bg-gray-200"></div>
                       <div>
-                        <span className="text-gray-400 text-[11px] block">Sipariş No</span>
-                        <strong className="text-indigo-600 font-bold text-sm">
-                          #{currentTargetStop?.order_id}
+                        <span className="text-zinc-500 text-[10px] block font-bold uppercase">Ağırlık</span>
+                        <strong className="text-black font-black text-sm">
+                          {currentTargetStop?.weight_kg ?? 1} kg
                         </strong>
                       </div>
                     </div>
@@ -483,9 +442,9 @@ export default function App() {
                   {/* Mark Delivered Button */}
                   <button
                     onClick={handleMarkDelivered}
-                    className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 text-sm shadow-md shadow-emerald-600/20 transition cursor-pointer flex items-center justify-center gap-2 active:scale-98"
+                    className="w-full rounded-xl bg-green-700 hover:bg-green-800 text-white font-black py-3.5 text-sm shadow-md shadow-green-900/20 transition cursor-pointer flex items-center justify-center gap-2 active:scale-98"
                   >
-                    <span>📍 Teslim Edildi</span>
+                    <span>Teslim Edildi</span>
                   </button>
                 </div>
               )}

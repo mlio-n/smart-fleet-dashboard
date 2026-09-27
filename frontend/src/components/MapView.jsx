@@ -22,31 +22,30 @@ const STATUS_COLORS = {
   PENDING: '#3b82f6',
   ANOMALY: '#ef4444',
   RESOLVED_MANUALLY: '#f59e0b',
-  ROUTED: '#10b981',
+  ROUTED: '#15803d',
   DELIVERED: '#6b7280',
 };
 
-const ROUTE_COLORS = ['#4f46e5', '#059669', '#d97706', '#dc2626', '#7c3aed', '#0284c7'];
+const ROUTE_COLORS = ['#15803d', '#18181b', '#047857', '#27272a', '#166534', '#3f3f46'];
 
-// Custom depot icon
+// Custom depot icon (Denizlispor Green & Black)
 const DEPOT_ICON = L.divIcon({
   className: '',
   html: `<div style="
-    background: #4338ca;
-    color: white;
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
+    background: #000000;
+    color: #22c55e;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
-    border: 2px solid white;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-  ">🏢</div>`,
-  iconSize: [34, 34],
-  iconAnchor: [17, 17],
-  popupAnchor: [0, -17],
+    border: 2px solid #16a34a;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  "><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg></div>`,
+  iconSize: [38, 38],
+  iconAnchor: [19, 19],
+  popupAnchor: [0, -19],
 });
 
 function createColoredIcon(color, isSelected) {
@@ -60,7 +59,7 @@ function createColoredIcon(color, isSelected) {
       border: ${borderWidth}px solid white;
       border-radius: 50%;
       box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-      ${isSelected ? 'outline: 3px solid #4f46e5;' : ''}
+      ${isSelected ? 'outline: 3px solid #15803d;' : ''}
     "></div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
@@ -68,20 +67,21 @@ function createColoredIcon(color, isSelected) {
   });
 }
 
-function FlyToSelected({ selected }) {
+function FlyToSelected({ selected, isNavigating }) {
   const map = useMap();
   useEffect(() => {
-    if (selected?.latitude != null && selected?.longitude != null) {
+    // Only fly to selected when not overriding initial navigation focus
+    if (!isNavigating && selected?.latitude != null && selected?.longitude != null) {
       map.flyTo([selected.latitude, selected.longitude], 15, { duration: 0.8 });
     }
-  }, [selected, map]);
+  }, [selected, isNavigating, map]);
   return null;
 }
 
-function AutoFitRoute({ routes }) {
+function AutoFitRoute({ routes, isNavigating }) {
   const map = useMap();
   useEffect(() => {
-    if (routes?.routes?.length > 0) {
+    if (!isNavigating && routes?.routes?.length > 0) {
       const allPoints = [];
       routes.routes.forEach((r) => {
         if (r.geometry && r.geometry.length > 0) {
@@ -98,11 +98,22 @@ function AutoFitRoute({ routes }) {
         map.fitBounds(allPoints, { padding: [50, 50], maxZoom: 15 });
       }
     }
-  }, [routes, map]);
+  }, [routes, isNavigating, map]);
   return null;
 }
 
-export default function MapView({ orders, selectedOrder, routes }) {
+// Directly zooms into courier's location (Merkez Depo) when navigation starts
+function CourierCenterFocus({ isNavigating }) {
+  const map = useMap();
+  useEffect(() => {
+    if (isNavigating) {
+      map.flyTo(MAP_CENTER, 16, { duration: 1.0 });
+    }
+  }, [isNavigating, map]);
+  return null;
+}
+
+export default function MapView({ orders, selectedOrder, routes, isNavigating }) {
   const ordersWithCoords = orders.filter((o) => o.latitude != null && o.longitude != null);
 
   // Build real street polylines using OSRM geometry when available
@@ -130,17 +141,18 @@ export default function MapView({ orders, selectedOrder, routes }) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      <FlyToSelected selected={selectedOrder} />
-      <AutoFitRoute routes={routes} />
+      <FlyToSelected selected={selectedOrder} isNavigating={isNavigating} />
+      <AutoFitRoute routes={routes} isNavigating={isNavigating} />
+      <CourierCenterFocus isNavigating={isNavigating} />
 
-      {/* Main Depot / Distribution Centre Marker */}
+      {/* Main Depot / Distribution Centre Marker (Courier Location) */}
       <Marker position={MAP_CENTER} icon={DEPOT_ICON}>
         <Popup>
           <div className="text-sm p-1">
-            <div className="flex items-center gap-1.5 font-bold text-indigo-900">
-              <span>🏢</span> Merkez Dağıtım Deposu
+            <div className="flex items-center gap-1.5 font-black text-black">
+              Merkez Dağıtım Deposu (Kurye Konumu)
             </div>
-            <p className="text-xs text-gray-600 mt-1">Denizli Dağıtım Merkezi (Depot 0)</p>
+            <p className="text-xs text-gray-600 mt-1">Denizli Dağıtım Merkezi</p>
             <p className="text-[11px] text-gray-400 mt-1 font-mono">37.7765° N, 29.0864° E</p>
           </div>
         </Popup>
