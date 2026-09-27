@@ -266,17 +266,36 @@ export default function App() {
                   </p>
                 </div>
 
-                <button
-                  onClick={() => setIsNewOrderOpen(true)}
-                  style={{
-                    fontSize: `${newOrderBtnSize}px`,
-                    padding: `${Math.round(5 * scale)}px ${Math.round(10 * scale)}px`,
-                    borderRadius: `${Math.round(6 * scale)}px`,
-                  }}
-                  className="flex items-center gap-1 bg-green-700 hover:bg-green-800 font-bold text-white transition cursor-pointer shadow-xs active:scale-98"
-                >
-                  <span>+</span> Yeni Sipariş
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={handleClearAllOrders}
+                    disabled={orders.length === 0}
+                    title="Tüm siparişleri ve mevcut rotayı temizle"
+                    style={{
+                      fontSize: `${newOrderBtnSize}px`,
+                      padding: `${Math.round(5 * scale)}px ${Math.round(8 * scale)}px`,
+                      borderRadius: `${Math.round(6 * scale)}px`,
+                    }}
+                    className="flex items-center gap-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold transition cursor-pointer shadow-xs active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    Temizle
+                  </button>
+
+                  <button
+                    onClick={() => setIsNewOrderOpen(true)}
+                    style={{
+                      fontSize: `${newOrderBtnSize}px`,
+                      padding: `${Math.round(5 * scale)}px ${Math.round(10 * scale)}px`,
+                      borderRadius: `${Math.round(6 * scale)}px`,
+                    }}
+                    className="flex items-center gap-1 bg-green-700 hover:bg-green-800 font-bold text-white transition cursor-pointer shadow-xs active:scale-98"
+                  >
+                    <span>+</span> Yeni Sipariş
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -347,20 +366,6 @@ export default function App() {
               }}
               onStartJourney={handleStartJourney}
             />
-
-            {/* Clear All Orders Trigger (Direct delete, no prompt) */}
-            <div className="p-3 bg-white border-t border-zinc-200">
-              <button
-                onClick={handleClearAllOrders}
-                disabled={orders.length === 0}
-                className="w-full py-2.5 px-3 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed text-red-700 text-xs font-black transition cursor-pointer text-center flex items-center justify-center gap-1.5 shadow-2xs active:scale-98"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                Siparişleri Temizle ({orders.length})
-              </button>
-            </div>
           </aside>
         )}
 
