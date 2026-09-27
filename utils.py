@@ -1,21 +1,28 @@
 """
 utils.py
 --------
-Pure mathematical utilities for geospatial calculations.
+Geospatial and routing utilities.
 
-No external dependencies beyond the standard library — these functions are
-deterministic, easily testable, and safe to call from any module.
+Uses Open Source Routing Machine (OSRM) for real road network distances and
+exact street geometry, with automatic mathematical Haversine fallback.
 """
 
 import math
-from typing import List, Tuple
+import logging
+from typing import List, Tuple, Dict, Any
+import requests
+
+logger = logging.getLogger("smart_fleet.routing")
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
-# WGS-84 mean Earth radius in **metres**.
 EARTH_RADIUS_M = 6_371_000
+OSRM_TABLE_URL = "https://router.project-osrm.org/table/v1/driving"
+OSRM_ROUTE_URL = "https://router.project-osrm.org/route/v1/driving"
+OSRM_HEADERS = {"User-Agent": "SmartFleet_Logistics/1.0"}
+OSRM_TIMEOUT = 5  # seconds timeout for external routing calls
 
 
 # ---------------------------------------------------------------------------
@@ -29,28 +36,7 @@ def haversine(
     lon2: float,
 ) -> float:
     """
-    Calculate the great-circle distance between two points on Earth using
-    the Haversine formula.
-
-    Parameters
-    ----------
-    lat1, lon1 : float
-        Latitude and longitude of the first point  (decimal degrees).
-    lat2, lon2 : float
-        Latitude and longitude of the second point (decimal degrees).
-
-    Returns
-    -------
-    float
-        Distance in **metres** (rounded to the nearest integer internally
-        by consumers like the distance matrix, but returned as a float here
-        for maximum precision).
-
-    Mathematical reference
-    ----------------------
-        a = sin²(Δφ / 2) + cos(φ₁) · cos(φ₂) · sin²(Δλ / 2)
-        c = 2 · atan2(√a, √(1 − a))
-        d = R · c
+    Calculate great-circle aerial distance between two points on Earth (meters).
     """
     phi1     = math.radians(lat1)
     phi2     = math.radians(lat2)
@@ -67,47 +53,111 @@ def haversine(
 
 
 # ---------------------------------------------------------------------------
-# Distance matrix builder
+# Distance Matrix with OSRM Real Road Distance
 # ---------------------------------------------------------------------------
 
 def create_distance_matrix(
     coordinates: List[Tuple[float, float]],
 ) -> List[List[int]]:
     """
-    Build a symmetric 2-D distance matrix from a list of (lat, lon) pairs.
-
-    Parameters
-    ----------
-    coordinates : List[Tuple[float, float]]
-        Ordered list of coordinate pairs.
-        **Index 0 is always the Depot** (distribution centre).
-        Indices 1 … N correspond to customer delivery points.
-
-    Returns
-    -------
-    List[List[int]]
-        An N×N matrix where ``matrix[i][j]`` is the Haversine distance
-        (in metres, rounded to int) between ``coordinates[i]`` and
-        ``coordinates[j]``.
-
-    Notes
-    -----
-    * Integer metres are used because OR-Tools' routing solver operates on
-      integer costs.  Rounding to the nearest metre introduces negligible
-      error for real-world logistics.
-    * The matrix is symmetric: ``matrix[i][j] == matrix[j][i]``.
-    * Diagonal entries are always ``0``.
+    Build a distance matrix from a list of (lat, lon) pairs using real street
+    driving distances from OSRM, falling back to Haversine if offline.
     """
     n = len(coordinates)
-    matrix: List[List[int]] = [[0] * n for _ in range(n)]
+    if n == 0:
+        return []
 
+    # 1. Try real road network distances via OSRM Table API
+    try:
+        coord_str = ";".join(f"{lon},{lat}" for lat, lon in coordinates)
+        url = f"{OSRM_TABLE_URL}/{coord_str}?annotations=distance"
+        response = requests.get(url, headers=OSRM_HEADERS, timeout=OSRM_TIMEOUT)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("code") == "Ok" and "distances" in data:
+                raw_matrix = data["distances"]
+                # Convert to integer meters (handle any None values with 0)
+                matrix = [
+                    [int(round(cell or 0)) for cell in row]
+                    for row in raw_matrix
+                ]
+                logger.info("Successfully generated real road distance matrix via OSRM (%sx%s).", n, n)
+                return matrix
+    except Exception as exc:
+        logger.warning("OSRM distance table request failed, falling back to Haversine: %s", exc)
+
+    # 2. Fallback: Haversine distance with 1.3 urban circuity factor
+    matrix: List[List[int]] = [[0] * n for _ in range(n)]
     for i in range(n):
         for j in range(i + 1, n):
             dist = int(round(haversine(
                 coordinates[i][0], coordinates[i][1],
                 coordinates[j][0], coordinates[j][1],
-            )))
+            ) * 1.3))
             matrix[i][j] = dist
-            matrix[j][i] = dist           # symmetric
+            matrix[j][i] = dist
 
+    logger.info("Generated fallback Haversine distance matrix (%sx%s).", n, n)
     return matrix
+
+
+# ---------------------------------------------------------------------------
+# Real Street Turn-by-Turn Road Geometry
+# ---------------------------------------------------------------------------
+
+def get_route_driving_geometry(
+    coordinates: List[Tuple[float, float]],
+) -> Dict[str, Any]:
+    """
+    Fetch exact turn-by-turn road geometry and driving statistics for an ordered
+    list of (lat, lon) stop coordinates using OSRM.
+
+    Returns:
+        {
+            "geometry": [[lat, lon], [lat, lon], ...],  # Follows real roads
+            "distance_m": float,                        # Actual street driving distance
+            "duration_s": float,                        # Driving time in seconds
+        }
+    """
+    if len(coordinates) < 2:
+        return {
+            "geometry": [[lat, lon] for lat, lon in coordinates],
+            "distance_m": 0,
+            "duration_s": 0,
+        }
+
+    try:
+        coord_str = ";".join(f"{lon},{lat}" for lat, lon in coordinates)
+        url = f"{OSRM_ROUTE_URL}/{coord_str}?overview=full&geometries=geojson"
+        response = requests.get(url, headers=OSRM_HEADERS, timeout=OSRM_TIMEOUT)
+
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("code") == "Ok" and data.get("routes"):
+                best_route = data["routes"][0]
+                # OSRM geojson coordinates are [lon, lat], Leaflet expects [lat, lon]
+                osrm_coords = best_route["geometry"]["coordinates"]
+                leaflet_coords = [[lat, lon] for lon, lat in osrm_coords]
+
+                logger.info(
+                    "OSRM road geometry fetched: %s waypoints, %.1f km, %.1f mins.",
+                    len(leaflet_coords),
+                    best_route["distance"] / 1000,
+                    best_route["duration"] / 60,
+                )
+
+                return {
+                    "geometry": leaflet_coords,
+                    "distance_m": best_route["distance"],
+                    "duration_s": best_route["duration"],
+                }
+    except Exception as exc:
+        logger.warning("OSRM route geometry request failed, falling back to straight lines: %s", exc)
+
+    # Fallback to straight segments between stops
+    return {
+        "geometry": [[lat, lon] for lat, lon in coordinates],
+        "distance_m": 0,
+        "duration_s": 0,
+    }

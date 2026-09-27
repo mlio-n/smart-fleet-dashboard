@@ -72,6 +72,10 @@ class OrderUpdate(BaseModel):
         gt=0,
         description="Updated weight in kilograms.",
     )
+    status: OrderStatus | None = Field(
+        default=None,
+        description="Updated order status (e.g. DELIVERED).",
+    )
 
 
 # ---------------------------------------------------------------------------

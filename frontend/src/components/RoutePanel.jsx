@@ -1,20 +1,22 @@
 import { useState } from 'react';
 import { generateRoutes } from '../api';
 
-export default function RoutePanel({ onRoutesGenerated }) {
-  const [numVehicles, setNumVehicles] = useState(3);
-  const [capacity, setCapacity] = useState(100);
+export default function RoutePanel({ onRoutesGenerated, onStartJourney, scale = 1 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+
+  // Single delivery vehicle with generous default capacity (1000 kg)
+  const FIXED_VEHICLES = 1;
+  const FIXED_CAPACITY = 1000;
 
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await generateRoutes({
-        num_vehicles: numVehicles,
-        vehicle_capacity: capacity,
+        num_vehicles: FIXED_VEHICLES,
+        vehicle_capacity: FIXED_CAPACITY,
       });
       setResult(data);
       onRoutesGenerated?.(data);
@@ -58,90 +60,87 @@ export default function RoutePanel({ onRoutesGenerated }) {
     document.body.removeChild(link);
   };
 
+  const buttonSize = Math.round(13 * scale);
+  const pad = Math.round(14 * scale);
+  const labelSize = Math.round(11 * scale);
+
   return (
-    <div className="sticky bottom-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 p-4 shadow-2xl z-10">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs">
-            🚚
-          </div>
-          <div>
-            <h3 className="text-xs font-extrabold text-white uppercase tracking-wider">
-              ROTA OPTİMİZASYONU
-            </h3>
-            <p className="text-[10px] text-slate-400">Google OR-Tools CVRP Motoru</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2.5 mb-3">
-        <label className="block">
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Araç Sayısı</span>
-          <input
-            type="number"
-            min={1}
-            max={20}
-            value={numVehicles}
-            onChange={(e) => setNumVehicles(parseInt(e.target.value) || 1)}
-            className="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3 py-1.5 text-xs font-mono-num font-medium text-slate-100 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition"
-          />
-        </label>
-        <label className="block">
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Kapasite (kg)</span>
-          <input
-            type="number"
-            min={1}
-            value={capacity}
-            onChange={(e) => setCapacity(parseFloat(e.target.value) || 1)}
-            className="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3 py-1.5 text-xs font-mono-num font-medium text-slate-100 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition"
-          />
-        </label>
-      </div>
-
+    <div
+      style={{ padding: `${pad}px` }}
+      className="sticky bottom-0 bg-white border-t border-gray-200 shadow-sm z-10"
+    >
       <button
         onClick={handleGenerate}
         disabled={loading}
-        className="w-full rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 active:opacity-90 disabled:opacity-50 text-white font-extrabold text-xs py-2.5 transition-all shadow-lg shadow-indigo-500/25 cursor-pointer flex items-center justify-center gap-2"
+        style={{
+          fontSize: `${buttonSize}px`,
+          padding: `${Math.round(9 * scale)}px ${Math.round(14 * scale)}px`,
+          borderRadius: `${Math.round(6 * scale)}px`,
+        }}
+        className="w-full bg-indigo-600 font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition cursor-pointer flex items-center justify-center gap-2 shadow-xs"
       >
         {loading ? (
-          <>
-            <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-            </svg>
-            <span>Rotalar Hesaplanıyor...</span>
-          </>
+          <span>Rotalar Hesaplanıyor...</span>
         ) : (
-          <span>⚡ Rotaları Hesapla (CVRP)</span>
+          <span>🚀 Rotaları Hesapla</span>
         )}
       </button>
 
       {error && (
-        <div className="mt-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 p-2.5 text-xs text-rose-300 font-medium">
-          ⚠️ {error}
+        <div
+          style={{
+            marginTop: `${Math.round(8 * scale)}px`,
+            padding: `${Math.round(6 * scale)}px`,
+            fontSize: `${labelSize}px`,
+          }}
+          className="rounded bg-red-50 border border-red-200 text-red-700"
+        >
+          {error}
         </div>
       )}
 
       {result && (
-        <div className="mt-3 rounded-xl bg-slate-950 border border-emerald-500/30 p-3 text-xs">
-          <div className="flex items-center justify-between font-bold text-emerald-400">
-            <span className="flex items-center gap-1.5">
-              <span>✓</span> {result.num_vehicles_used} Araç Atandı
-            </span>
-            <span className="font-mono-num text-slate-300">{(result.total_distance_m / 1000).toFixed(1)} km</span>
+        <div
+          style={{
+            marginTop: `${Math.round(10 * scale)}px`,
+            padding: `${Math.round(10 * scale)}px`,
+            fontSize: `${labelSize}px`,
+          }}
+          className="rounded bg-emerald-50 border border-emerald-200 text-emerald-900"
+        >
+          <div className="flex items-center justify-between font-bold">
+            <span>✓ Dağıtım Rotası Hazır</span>
+            <span className="text-gray-600">{(result.total_distance_m / 1000).toFixed(1)} km</span>
           </div>
 
           {result.unassigned_orders.length > 0 && (
-            <p className="text-amber-400 mt-1.5 font-medium text-[11px]">
-              ⚠️ {result.unassigned_orders.length} sipariş araç kapasitesi yetersizliğinden atanamadı.
+            <p className="text-amber-700 font-medium" style={{ marginTop: `${Math.round(4 * scale)}px` }}>
+              ⚠️ {result.unassigned_orders.length} sipariş atanamadı.
             </p>
           )}
 
           <button
             onClick={handleExportCSV}
-            className="mt-2.5 w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-1.5 text-xs transition shadow-md shadow-emerald-500/20 cursor-pointer flex items-center justify-center gap-1.5"
+            style={{
+              marginTop: `${Math.round(8 * scale)}px`,
+              padding: `${Math.round(6 * scale)}px`,
+              fontSize: `${labelSize}px`,
+            }}
+            className="w-full rounded bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition cursor-pointer"
           >
             📥 Rota Çizelgesini İndir (CSV)
+          </button>
+
+          <button
+            onClick={() => onStartJourney?.(result)}
+            style={{
+              marginTop: `${Math.round(8 * scale)}px`,
+              padding: `${Math.round(9 * scale)}px`,
+              fontSize: `${buttonSize}px`,
+            }}
+            className="w-full rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold transition cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+          >
+            🚀 Yolculuğa Başla
           </button>
         </div>
       )}

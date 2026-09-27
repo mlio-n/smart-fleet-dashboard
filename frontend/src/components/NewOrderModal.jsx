@@ -36,61 +36,58 @@ export default function NewOrderModal({ onClose, onCreated }) {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4"
       onClick={onClose}
     >
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-2xl transition-all"
+        className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl border border-gray-200"
       >
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-sm">📦</span>
-            <h3 className="text-base font-bold text-white tracking-tight">Yeni Sipariş Oluştur</h3>
-          </div>
+          <h3 className="text-base font-bold text-gray-900">📦 Yeni Sipariş Ekle</h3>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer text-sm font-bold"
+            className="text-gray-400 hover:text-gray-600 text-lg font-bold cursor-pointer"
           >
             ✕
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 rounded-xl bg-rose-500/10 border border-rose-500/30 p-3 text-xs text-rose-300 font-medium">
-            ⚠️ {error}
+          <div className="mb-3 rounded bg-red-50 border border-red-200 p-2.5 text-xs text-red-700">
+            {error}
           </div>
         )}
 
-        <label className="block mb-3.5">
-          <span className="text-xs font-semibold text-slate-300">Müşteri Adı Soyadı</span>
+        <label className="block mb-3">
+          <span className="text-xs font-semibold text-gray-700">Müşteri Adı Soyadı</span>
           <input
             type="text"
             required
             value={form.customer_name}
             onChange={set('customer_name')}
             placeholder="Örn: Ahmet Yılmaz"
-            className="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition"
+            className="mt-1 block w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
           />
         </label>
 
-        <label className="block mb-3.5">
-          <span className="text-xs font-semibold text-slate-300">Teslimat Adresi</span>
+        <label className="block mb-3">
+          <span className="text-xs font-semibold text-gray-700">Teslimat Adresi</span>
           <textarea
             rows={3}
             required
             value={form.raw_address}
             onChange={set('raw_address')}
             placeholder="Örn: Çamlaraltı Mah. Üniversite Cad. No:15 Pamukkale Denizli"
-            className="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition"
+            className="mt-1 block w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
           />
-          <span className="text-[11px] text-slate-500 mt-1 block">Adres otomatik olarak arka planda Nominatim ile coğrafi konuma dönüştürülecektir.</span>
+          <span className="text-[11px] text-gray-500 mt-1 block">Adres otomatik olarak arka planda Nominatim ile coğrafi konuma dönüştürülecektir.</span>
         </label>
 
-        <label className="block mb-6">
-          <span className="text-xs font-semibold text-slate-300">Paket Ağırlığı (kg)</span>
+        <label className="block mb-5">
+          <span className="text-xs font-semibold text-gray-700">Paket Ağırlığı (kg)</span>
           <input
             type="number"
             step="0.1"
@@ -98,22 +95,22 @@ export default function NewOrderModal({ onClose, onCreated }) {
             required
             value={form.weight}
             onChange={set('weight')}
-            className="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2 text-sm font-mono-num text-slate-100 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition"
+            className="mt-1 block w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
           />
         </label>
 
-        <div className="flex justify-end gap-3 pt-2 border-t border-slate-800">
+        <div className="flex justify-end gap-2.5 pt-2 border-t border-gray-100">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+            className="rounded border border-gray-300 bg-white px-4 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition cursor-pointer"
           >
             İptal
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white px-5 py-2 text-xs font-bold transition cursor-pointer shadow-lg shadow-indigo-500/25 disabled:opacity-50"
+            className="rounded bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition cursor-pointer"
           >
             {loading ? 'Kaydediliyor...' : 'Siparişi Oluştur'}
           </button>

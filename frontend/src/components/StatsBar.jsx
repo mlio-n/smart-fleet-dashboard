@@ -1,102 +1,62 @@
 const CARDS = [
-  { 
-    key: 'total',              
-    label: 'TOPLAM SİPARİŞ',   
-    icon: '📦', 
-    badgeColor: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30',
-    activeGlow: 'ring-2 ring-indigo-500/50 bg-indigo-950/40 border-indigo-500/50 shadow-lg shadow-indigo-500/10',
-    numColor: 'text-indigo-400'
-  },
-  { 
-    key: 'PENDING',            
-    label: 'BEKLEMEDE',        
-    icon: '⚡', 
-    badgeColor: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
-    activeGlow: 'ring-2 ring-sky-500/50 bg-sky-950/40 border-sky-500/50 shadow-lg shadow-sky-500/10',
-    numColor: 'text-sky-400'
-  },
-  { 
-    key: 'ANOMALY',            
-    label: 'ANOMALİ',          
-    icon: '🚨', 
-    badgeColor: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
-    activeGlow: 'ring-2 ring-rose-500/50 bg-rose-950/40 border-rose-500/50 shadow-lg shadow-rose-500/20',
-    numColor: 'text-rose-400 font-bold'
-  },
-  { 
-    key: 'RESOLVED_MANUALLY',  
-    label: 'DÜZELTİLDİ',       
-    icon: '🛠️', 
-    badgeColor: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-    activeGlow: 'ring-2 ring-amber-500/50 bg-amber-950/40 border-amber-500/50 shadow-lg shadow-amber-500/10',
-    numColor: 'text-amber-400'
-  },
-  { 
-    key: 'ROUTED',             
-    label: 'ROTALANDI',        
-    icon: '🗺️', 
-    badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-    activeGlow: 'ring-2 ring-emerald-500/50 bg-emerald-950/40 border-emerald-500/50 shadow-lg shadow-emerald-500/10',
-    numColor: 'text-emerald-400'
-  },
+  { key: 'total',              label: 'Toplam Sipariş',  textColor: 'text-indigo-600', bgColor: 'bg-indigo-50 border-indigo-200' },
+  { key: 'PENDING',            label: 'Beklemede',       textColor: 'text-blue-600',   bgColor: 'bg-blue-50 border-blue-200' },
+  { key: 'ANOMALY',            label: 'Anomali',         textColor: 'text-red-600',    bgColor: 'bg-red-50 border-red-200' },
+  { key: 'RESOLVED_MANUALLY',  label: 'Düzeltildi',      textColor: 'text-amber-600',  bgColor: 'bg-amber-50 border-amber-200' },
+  { key: 'ROUTED',             label: 'Rotalandı',       textColor: 'text-emerald-600',bgColor: 'bg-emerald-50 border-emerald-200' },
 ];
 
 export default function StatsBar({ stats, onFilter, activeFilter }) {
   return (
-    <header className="flex items-center justify-between px-6 py-3 bg-slate-900 border-b border-slate-800 shadow-xl z-20">
-      {/* Brand & System Status */}
+    <header className="flex items-center justify-between px-8 py-5 bg-white border-b border-gray-200 shadow-xs z-20">
+      {/* Brand & Prominent Logo */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-            <span className="text-lg">🛰️</span>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-extrabold tracking-tight text-white">
-                SMART <span className="bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">FLEET</span>
-              </h1>
-              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                PRO OS
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span className="text-[11px] font-medium text-slate-400">Canlı Bağlantı Aktif</span>
-            </div>
-          </div>
+        <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 text-white shadow-md shrink-0">
+          <svg
+            className="w-8 h-8"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {/* Professional Logistics & Fleet Icon */}
+            <rect x="1" y="4" width="15" height="12" rx="2" />
+            <path d="M16 8h4.5l2.5 3v5h-7V8z" />
+            <circle cx="5.5" cy="18.5" r="2.5" />
+            <circle cx="18.5" cy="18.5" r="2.5" />
+          </svg>
+        </div>
+
+        <div>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none">
+            Smart Fleet
+          </h1>
+          <p className="text-sm text-gray-500 font-medium mt-1.5">
+            Lojistik Operasyon & Rota Yönetimi
+          </p>
         </div>
       </div>
 
-      {/* Metric Cards Filter Bar */}
+      {/* Prominent Metric Filter Buttons */}
       <div className="flex items-center gap-3">
-        {CARDS.map(({ key, label, icon, badgeColor, activeGlow, numColor }) => {
+        {CARDS.map(({ key, label, textColor, bgColor }) => {
           const isActive = activeFilter === (key === 'total' ? null : key);
           const count = stats[key] ?? 0;
-          
+
           return (
             <button
               key={key}
               onClick={() => onFilter(key === 'total' ? null : key)}
-              className={`group relative flex items-center gap-3 px-3.5 py-2 rounded-xl transition-all duration-200 cursor-pointer border ${
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border transition cursor-pointer ${
                 isActive
-                  ? activeGlow
-                  : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 hover:bg-slate-800/60'
+                  ? `${bgColor} font-bold ring-2 ring-indigo-500 shadow-xs`
+                  : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300'
               }`}
             >
-              <div className={`p-1.5 rounded-lg border text-xs ${badgeColor}`}>
-                {icon}
-              </div>
-              <div className="text-left">
-                <div className={`text-base font-bold leading-none font-mono-num ${numColor}`}>
-                  {count}
-                </div>
-                <div className="text-[10px] font-semibold text-slate-400 tracking-wider mt-1">
-                  {label}
-                </div>
-              </div>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}:</span>
+              <span className={`text-xl font-extrabold ${textColor}`}>{count}</span>
             </button>
           );
         })}

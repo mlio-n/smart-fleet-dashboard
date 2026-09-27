@@ -22,35 +22,35 @@ const STATUS_COLORS = {
   PENDING: '#3b82f6',
   ANOMALY: '#ef4444',
   RESOLVED_MANUALLY: '#f59e0b',
-  ROUTED: '#22c55e',
+  ROUTED: '#10b981',
   DELIVERED: '#6b7280',
 };
 
-const ROUTE_COLORS = ['#6366f1', '#ec4899', '#14b8a6', '#f97316', '#8b5cf6', '#06b6d4'];
+const ROUTE_COLORS = ['#4f46e5', '#059669', '#d97706', '#dc2626', '#7c3aed', '#0284c7'];
 
 // Custom depot icon
 const DEPOT_ICON = L.divIcon({
   className: '',
   html: `<div style="
-    background: #312e81;
+    background: #4338ca;
     color: white;
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 18px;
-    border: 2.5px solid white;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+    border: 2px solid white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
   ">🏢</div>`,
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
-  popupAnchor: [0, -16],
+  iconSize: [34, 34],
+  iconAnchor: [17, 17],
+  popupAnchor: [0, -17],
 });
 
 function createColoredIcon(color, isSelected) {
-  const size = isSelected ? 18 : 14;
+  const size = isSelected ? 20 : 15;
   const borderWidth = isSelected ? 3 : 2;
   return L.divIcon({
     className: '',
@@ -60,7 +60,7 @@ function createColoredIcon(color, isSelected) {
       border: ${borderWidth}px solid white;
       border-radius: 50%;
       box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-      ${isSelected ? 'outline: 3px solid #6366f1;' : ''}
+      ${isSelected ? 'outline: 3px solid #4f46e5;' : ''}
     "></div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
@@ -78,15 +78,49 @@ function FlyToSelected({ selected }) {
   return null;
 }
 
+function AutoFitRoute({ routes }) {
+  const map = useMap();
+  useEffect(() => {
+    if (routes?.routes?.length > 0) {
+      const allPoints = [];
+      routes.routes.forEach((r) => {
+        if (r.geometry && r.geometry.length > 0) {
+          allPoints.push(...r.geometry);
+        } else if (r.stops) {
+          r.stops.forEach((s) => {
+            if (s.lat != null && s.lon != null) {
+              allPoints.push([s.lat, s.lon]);
+            }
+          });
+        }
+      });
+      if (allPoints.length > 0) {
+        map.fitBounds(allPoints, { padding: [50, 50], maxZoom: 15 });
+      }
+    }
+  }, [routes, map]);
+  return null;
+}
+
 export default function MapView({ orders, selectedOrder, routes }) {
   const ordersWithCoords = orders.filter((o) => o.latitude != null && o.longitude != null);
 
-  // Build route polylines from route data
+  // Build real street polylines using OSRM geometry when available
   const routeLines = (routes?.routes || []).map((route, idx) => {
-    const positions = route.stops
-      .filter((s) => s.lat != null && s.lon != null)
-      .map((s) => [s.lat, s.lon]);
-    return { positions, color: ROUTE_COLORS[idx % ROUTE_COLORS.length], vehicle: route.vehicle };
+    const hasGeometry = Array.isArray(route.geometry) && route.geometry.length > 1;
+    const positions = hasGeometry
+      ? route.geometry
+      : route.stops
+          .filter((s) => s.lat != null && s.lon != null)
+          .map((s) => [s.lat, s.lon]);
+
+    return {
+      positions,
+      color: ROUTE_COLORS[idx % ROUTE_COLORS.length],
+      vehicle: route.vehicle,
+      distanceKm: ((route.route_distance_m || 0) / 1000).toFixed(1),
+      durationMins: route.duration_minutes || null,
+    };
   });
 
   return (
@@ -97,6 +131,7 @@ export default function MapView({ orders, selectedOrder, routes }) {
       />
 
       <FlyToSelected selected={selectedOrder} />
+      <AutoFitRoute routes={routes} />
 
       {/* Main Depot / Distribution Centre Marker */}
       <Marker position={MAP_CENTER} icon={DEPOT_ICON}>
@@ -137,12 +172,18 @@ export default function MapView({ orders, selectedOrder, routes }) {
         );
       })}
 
-      {/* Route Polylines */}
+      {/* Real Road Navigation Polylines */}
       {routeLines.map((line, idx) => (
         <Polyline
           key={idx}
           positions={line.positions}
-          pathOptions={{ color: line.color, weight: 3.5, opacity: 0.85 }}
+          pathOptions={{
+            color: line.color,
+            weight: 5,
+            opacity: 0.85,
+            lineJoin: 'round',
+            lineCap: 'round',
+          }}
         />
       ))}
     </MapContainer>

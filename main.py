@@ -31,7 +31,7 @@ from sqlalchemy.orm import Session
 from database import Base, SessionLocal, engine, get_db
 from models import Order, OrderStatus
 from schemas import OrderCreate, OrderUpdate, OrderResponse, RouteGenerationRequest, OrderResolve
-from utils import create_distance_matrix
+from utils import create_distance_matrix, get_route_driving_geometry
 from routing import solve_cvrp
 
 # ---------------------------------------------------------------------------
@@ -455,6 +455,8 @@ def update_order(
         order.customer_name = payload.customer_name
     if payload.weight is not None:
         order.weight = payload.weight
+    if payload.status is not None:
+        order.status = payload.status
     if payload.raw_address is not None and payload.raw_address != order.raw_address:
         order.raw_address = payload.raw_address
         order.status = OrderStatus.PENDING
@@ -537,7 +539,11 @@ def generate_routes(
     # ------------------------------------------------------------------
     # 1 ─ Fetch routable orders
     # ------------------------------------------------------------------
-    routable_statuses = [OrderStatus.PENDING, OrderStatus.RESOLVED_MANUALLY]
+    routable_statuses = [
+        OrderStatus.PENDING,
+        OrderStatus.RESOLVED_MANUALLY,
+        OrderStatus.ROUTED,
+    ]
 
     routable_orders: list[Order] = (
         db.query(Order)
@@ -642,10 +648,21 @@ def generate_routes(
                 })
                 routed_order_ids.append(order.id)
 
+        stop_coords = [
+            (s["lat"], s["lon"])
+            for s in route_order_details
+            if s.get("lat") is not None and s.get("lon") is not None
+        ]
+        road_data = get_route_driving_geometry(stop_coords)
+        actual_distance = int(round(road_data.get("distance_m") or route["route_distance_m"]))
+        duration_mins = round((road_data.get("duration_s") or 0) / 60, 1)
+
         vehicle_routes.append({
             "vehicle":          route["vehicle"],
             "stops":            route_order_details,
-            "route_distance_m": route["route_distance_m"],
+            "route_distance_m": actual_distance,
+            "duration_minutes": duration_mins,
+            "geometry":         road_data.get("geometry", []),
         })
 
     # ------------------------------------------------------------------
@@ -678,9 +695,11 @@ def generate_routes(
         len(routed_order_ids), len(unassigned),
     )
 
+    total_road_distance = sum(r["route_distance_m"] for r in vehicle_routes)
+
     return {
         "status":           result["status"],
-        "total_distance_m": result["total_distance_m"],
+        "total_distance_m": total_road_distance,
         "num_vehicles_used": sum(
             1 for r in vehicle_routes if len(r["stops"]) > 2
         ),
