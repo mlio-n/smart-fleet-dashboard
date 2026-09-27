@@ -39,7 +39,7 @@ export default function RoutePanel({ onRoutesGenerated, onStartJourney, scale = 
   return (
     <div
       style={{ padding: `${pad}px` }}
-      className="sticky bottom-0 bg-white border-t-2 border-zinc-200 shadow-md z-10"
+      className="sticky bottom-0 bg-white/85 backdrop-blur-xl border-t border-white/70 shadow-[0_-4px_20px_rgba(0,0,0,0.04)] z-10"
     >
       <button
         onClick={handleGenerate}
@@ -49,7 +49,7 @@ export default function RoutePanel({ onRoutesGenerated, onStartJourney, scale = 
           padding: `${Math.round(9 * scale)}px ${Math.round(14 * scale)}px`,
           borderRadius: `${Math.round(8 * scale)}px`,
         }}
-        className="w-full bg-green-700 font-extrabold text-white hover:bg-green-800 disabled:opacity-50 transition cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+        className="w-full bg-green-700 font-extrabold text-white hover:bg-green-800 disabled:opacity-50 transition cursor-pointer flex items-center justify-center gap-2 shadow-xs active:scale-98"
       >
         {loading ? (
           <span>Rotalar Hesaplanıyor...</span>
@@ -65,7 +65,7 @@ export default function RoutePanel({ onRoutesGenerated, onStartJourney, scale = 
             padding: `${Math.round(6 * scale)}px`,
             fontSize: `${labelSize}px`,
           }}
-          className="rounded-lg bg-red-50 border border-red-200 text-red-700 font-medium"
+          className="rounded-lg bg-red-50/90 border border-red-200 text-red-700 font-medium"
         >
           {error}
         </div>
@@ -78,7 +78,7 @@ export default function RoutePanel({ onRoutesGenerated, onStartJourney, scale = 
             padding: `${Math.round(10 * scale)}px`,
             fontSize: `${labelSize}px`,
           }}
-          className="rounded-xl bg-green-50 border-2 border-green-200 text-green-950"
+          className="rounded-2xl bg-white/80 backdrop-blur-md border border-green-300 text-green-950 shadow-xs"
         >
           <div className="flex items-center justify-between font-black text-black">
             <span>Dağıtım Rotası Hazır</span>

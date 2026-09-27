@@ -131,15 +131,18 @@ export default function NewOrderModal({ onClose, onCreated }) {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-md"
       onClick={onClose}
     >
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
-        className="w-full max-w-xl rounded-2xl bg-white p-7 shadow-2xl border-2 border-zinc-200 animate-in fade-in zoom-in-95 duration-200"
+        className="w-full max-w-xl rounded-3xl bg-white/85 backdrop-blur-2xl p-7 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] border border-white/70 animate-in fade-in zoom-in-95 duration-200 relative overflow-hidden"
       >
-        <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-100">
+        {/* Specular highlight border effect at top */}
+        <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />
+
+        <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-200/60">
           <div>
             <h3 className="text-lg font-black text-black">Yeni Sipariş Ekle</h3>
             <p className="text-xs text-zinc-500 font-semibold mt-0.5">
@@ -149,7 +152,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
           <button
             type="button"
             onClick={onClose}
-            className="text-zinc-400 hover:text-black text-xl font-bold cursor-pointer transition p-1 hover:bg-zinc-100 rounded-lg"
+            className="text-zinc-400 hover:text-black text-xl font-bold cursor-pointer transition p-1 hover:bg-zinc-100/80 rounded-lg"
           >
             ✕
           </button>
@@ -161,7 +164,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
             type="button"
             disabled={loading}
             onClick={handleAutoCreateReal}
-            className="py-2.5 px-4 rounded-xl border-2 border-green-500 bg-green-50 hover:bg-green-100 disabled:opacity-50 text-green-950 text-xs font-black transition cursor-pointer text-center shadow-xs active:scale-98"
+            className="py-2.5 px-4 rounded-xl border border-green-500/70 bg-green-50/80 hover:bg-green-100/90 disabled:opacity-50 text-green-950 text-xs font-black transition cursor-pointer text-center shadow-xs active:scale-98 backdrop-blur-xs"
           >
             {loading ? 'Oluşturuluyor...' : '+ Gerçek Sipariş Oluştur'}
           </button>
@@ -169,7 +172,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
             type="button"
             disabled={loading}
             onClick={handleAutoCreateAnomaly}
-            className="py-2.5 px-4 rounded-xl border-2 border-rose-400 bg-rose-50 hover:bg-rose-100 disabled:opacity-50 text-rose-950 text-xs font-black transition cursor-pointer text-center shadow-xs active:scale-98"
+            className="py-2.5 px-4 rounded-xl border border-rose-400/70 bg-rose-50/80 hover:bg-rose-100/90 disabled:opacity-50 text-rose-950 text-xs font-black transition cursor-pointer text-center shadow-xs active:scale-98 backdrop-blur-xs"
           >
             {loading ? 'Oluşturuluyor...' : '+ Anomali Sipariş Oluştur'}
           </button>
@@ -178,21 +181,21 @@ export default function NewOrderModal({ onClose, onCreated }) {
         {/* Fixed-Height Feedback Slot (Prevents layout shift & button jump) */}
         <div className="h-12 mb-4 flex items-center">
           {error ? (
-            <div className="w-full h-full flex items-center px-3.5 rounded-xl text-xs font-bold border-2 bg-red-50 border-red-200 text-red-700 truncate animate-in fade-in duration-150">
+            <div className="w-full h-full flex items-center px-3.5 rounded-xl text-xs font-bold border border-red-200 bg-red-50/90 backdrop-blur-xs text-red-700 truncate animate-in fade-in duration-150">
               <span className="truncate">{error}</span>
             </div>
           ) : notification ? (
             <div
-              className={`w-full h-full flex items-center px-3.5 rounded-xl text-xs font-bold border-2 transition-all duration-200 truncate animate-in fade-in duration-150 ${
+              className={`w-full h-full flex items-center px-3.5 rounded-xl text-xs font-bold border transition-all duration-200 truncate animate-in fade-in duration-150 backdrop-blur-xs ${
                 notification.type === 'success'
-                  ? 'bg-green-100 border-green-300 text-green-900'
-                  : 'bg-amber-100 border-amber-300 text-amber-900'
+                  ? 'bg-green-100/90 border-green-300/80 text-green-900'
+                  : 'bg-amber-100/90 border-amber-300/80 text-amber-900'
               }`}
             >
               <span className="truncate">{notification.text}</span>
             </div>
           ) : (
-            <div className="w-full h-full flex items-center px-3.5 rounded-xl text-xs font-medium text-zinc-400 border border-dashed border-zinc-200 bg-zinc-50/60">
+            <div className="w-full h-full flex items-center px-3.5 rounded-xl text-xs font-medium text-zinc-500 border border-dashed border-zinc-300/80 bg-white/40 backdrop-blur-xs">
               <span>Hızlı sipariş eklemek için yukarıdaki butonları kullanabilirsiniz.</span>
             </div>
           )}
@@ -206,7 +209,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
             value={form.customer_name}
             onChange={set('customer_name')}
             placeholder="Örn: Ahmet Yılmaz"
-            className="mt-1.5 block w-full rounded-xl border border-zinc-300 px-3.5 py-2.5 text-sm text-black focus:border-green-600 focus:ring-1 focus:ring-green-600 outline-none"
+            className="mt-1.5 block w-full rounded-xl border border-zinc-200/90 bg-white/80 backdrop-blur-xs px-3.5 py-2.5 text-sm text-black focus:border-green-600 focus:bg-white focus:ring-1 focus:ring-green-600 outline-none shadow-xs transition"
           />
         </label>
 
@@ -218,7 +221,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
             value={form.raw_address}
             onChange={set('raw_address')}
             placeholder="Örn: Çamlaraltı Mahallesi, Çamlık Caddesi Pamukkale Denizli"
-            className="mt-1.5 block w-full rounded-xl border border-zinc-300 px-3.5 py-2.5 text-sm text-black focus:border-green-600 focus:ring-1 focus:ring-green-600 outline-none"
+            className="mt-1.5 block w-full rounded-xl border border-zinc-200/90 bg-white/80 backdrop-blur-xs px-3.5 py-2.5 text-sm text-black focus:border-green-600 focus:bg-white focus:ring-1 focus:ring-green-600 outline-none shadow-xs transition"
           />
           <span className="text-[11px] text-zinc-500 mt-1 block font-medium">
             Adres arka planda Nominatim ile coğrafi koordinatlara dönüştürülecektir.
@@ -234,15 +237,15 @@ export default function NewOrderModal({ onClose, onCreated }) {
             required
             value={form.weight}
             onChange={set('weight')}
-            className="mt-1.5 block w-full rounded-xl border border-zinc-300 px-3.5 py-2.5 text-sm text-black focus:border-green-600 focus:ring-1 focus:ring-green-600 outline-none"
+            className="mt-1.5 block w-full rounded-xl border border-zinc-200/90 bg-white/80 backdrop-blur-xs px-3.5 py-2.5 text-sm text-black focus:border-green-600 focus:bg-white focus:ring-1 focus:ring-green-600 outline-none shadow-xs transition"
           />
         </label>
 
-        <div className="flex justify-end gap-3 pt-3 border-t border-zinc-200">
+        <div className="flex justify-end gap-3 pt-3 border-t border-zinc-200/60">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-zinc-300 bg-white px-5 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-100 transition cursor-pointer"
+            className="rounded-xl border border-zinc-200 bg-white/70 backdrop-blur-xs px-5 py-2 text-xs font-bold text-zinc-700 hover:bg-white transition cursor-pointer shadow-xs"
           >
             Kapat
           </button>

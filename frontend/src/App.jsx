@@ -231,7 +231,7 @@ export default function App() {
   // ─── Render ──────────────────────────────────────────────────────
   return (
     <div
-      className={`flex flex-col h-screen w-screen overflow-hidden bg-gray-50/50 ${
+      className={`flex flex-col h-screen w-screen overflow-hidden bg-gradient-to-br from-zinc-100 via-slate-50 to-zinc-200/80 ${
         isResizing ? 'select-none cursor-col-resize' : ''
       }`}
     >
@@ -250,15 +250,17 @@ export default function App() {
         {/* ── Resizable Sidebar (Smooth Slide-out Animation) ─────── */}
         <aside
           style={{ width: isNavigating ? '0px' : `${sidebarWidth}px` }}
-          className={`flex-shrink-0 flex flex-col bg-gray-50/50 border-r border-gray-200/80 relative backdrop-blur-xs transition-all duration-500 ease-in-out overflow-hidden ${
+          className={`flex-shrink-0 flex flex-col bg-white/75 backdrop-blur-2xl border-r border-white/60 relative transition-all duration-500 ease-in-out overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)] ${
             isNavigating ? '-translate-x-12 opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'
           }`}
         >
             {/* Header */}
             <div
               style={{ padding: `${paddingScaled}px` }}
-              className="bg-white border-b border-gray-200/80 shadow-xs"
+              className="bg-white/70 backdrop-blur-xl border-b border-white/60 shadow-xs relative"
             >
+              {/* Specular highlight */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />
               <div className="flex items-center justify-between">
                 <div>
                   <h2

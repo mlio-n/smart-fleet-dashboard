@@ -1,27 +1,27 @@
 const STATUS_CONFIG = {
   PENDING: {
     label: 'Beklemede',
-    badge: 'bg-zinc-100 text-zinc-800 border-zinc-300',
+    badge: 'bg-zinc-100/80 backdrop-blur-xs text-zinc-800 border-zinc-300',
     leftBorder: 'border-l-black',
   },
   ANOMALY: {
     label: 'Anomali',
-    badge: 'bg-rose-50 text-rose-800 border-rose-200 font-bold',
+    badge: 'bg-rose-50/90 backdrop-blur-xs text-rose-800 border-rose-200 font-bold',
     leftBorder: 'border-l-rose-600',
   },
   RESOLVED_MANUALLY: {
     label: 'Düzeltildi',
-    badge: 'bg-amber-50 text-amber-800 border-amber-200',
+    badge: 'bg-amber-50/90 backdrop-blur-xs text-amber-800 border-amber-200',
     leftBorder: 'border-l-amber-500',
   },
   ROUTED: {
     label: 'Rotalandı',
-    badge: 'bg-green-50 text-green-800 border-green-200 font-bold',
+    badge: 'bg-green-50/90 backdrop-blur-xs text-green-800 border-green-200 font-bold',
     leftBorder: 'border-l-green-600',
   },
   DELIVERED: {
     label: 'Teslim Edildi',
-    badge: 'bg-green-100 text-green-900 border-green-300 font-black',
+    badge: 'bg-green-100/90 backdrop-blur-xs text-green-900 border-green-300 font-black',
     leftBorder: 'border-l-green-700',
   },
 };
@@ -56,10 +56,10 @@ export default function OrderCard({
         borderRadius: `${radius}px`,
         gap: `${gap}px`,
       }}
-      className={`group relative flex flex-col justify-between w-full border border-zinc-200/90 border-l-4 ${config.leftBorder} bg-white shadow-xs transition-all duration-150 cursor-pointer select-text ${
+      className={`group relative flex flex-col justify-between w-full border border-white/80 border-l-4 ${config.leftBorder} bg-white/85 backdrop-blur-xl shadow-xs transition-all duration-200 cursor-pointer select-text ${
         isSelected
-          ? 'ring-2 ring-black bg-green-50/20 shadow-md'
-          : 'hover:border-zinc-300 hover:shadow-md'
+          ? 'ring-2 ring-black bg-green-50/70 shadow-lg scale-[1.01]'
+          : 'hover:border-zinc-300/80 hover:bg-white/95 hover:shadow-md'
       }`}
     >
       <div>
