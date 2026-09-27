@@ -88,9 +88,7 @@ export default function OrderCard({
               title="Siparişi Sil"
               onClick={(e) => {
                 e.stopPropagation();
-                if (window.confirm(`#${order.id} nolu siparişi silmek istediğinize emin misiniz?`)) {
-                  onDelete?.(order.id);
-                }
+                onDelete?.(order.id);
               }}
               style={{
                 padding: `${Math.round(2 * scale)}px`,

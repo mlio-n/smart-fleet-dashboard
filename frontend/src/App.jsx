@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { fetchOrders, fetchStats, deleteOrder, regeocodeOrder, updateOrder } from './api';
+import { fetchOrders, fetchStats, deleteOrder, clearAllOrders, regeocodeOrder, updateOrder } from './api';
 import StatsBar from './components/StatsBar';
 import OrderCard from './components/OrderCard';
 import ResolveModal from './components/ResolveModal';
@@ -129,6 +129,18 @@ export default function App() {
       refresh();
     } catch (err) {
       alert(err.response?.data?.detail || 'Sipariş silinirken hata oluştu.');
+    }
+  };
+
+  // Handle clear all orders
+  const handleClearAllOrders = async () => {
+    try {
+      await clearAllOrders();
+      setSelectedOrder(null);
+      setRoutes(null);
+      refresh();
+    } catch (err) {
+      alert('Siparişler temizlenirken hata oluştu.');
     }
   };
 
@@ -335,6 +347,20 @@ export default function App() {
               }}
               onStartJourney={handleStartJourney}
             />
+
+            {/* Clear All Orders Trigger (Direct delete, no prompt) */}
+            <div className="p-3 bg-white border-t border-zinc-200">
+              <button
+                onClick={handleClearAllOrders}
+                disabled={orders.length === 0}
+                className="w-full py-2.5 px-3 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed text-red-700 text-xs font-black transition cursor-pointer text-center flex items-center justify-center gap-1.5 shadow-2xs active:scale-98"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                Siparişleri Temizle ({orders.length})
+              </button>
+            </div>
           </aside>
         )}
 
@@ -356,28 +382,30 @@ export default function App() {
             selectedOrder={selectedOrder}
             routes={routes}
             isNavigating={isNavigating}
+            currentStopIndex={currentStopIndex}
+            deliveryStops={deliveryStops}
           />
 
           {/* ── Floating Driver HUD (Heads-Up Display) ─────────── */}
           {isNavigating && (
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-6 w-11/12 max-w-md border-2 border-zinc-200 animate-in fade-in duration-300">
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] bg-white/98 backdrop-blur-md shadow-2xl rounded-3xl p-8 w-11/12 max-w-xl border-2 border-zinc-200 animate-in fade-in zoom-in-95 duration-200">
               {currentStopIndex >= deliveryStops.length ? (
                 /* Route Completed Screen */
-                <div className="text-center py-2">
-                  <div className="w-12 h-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center mx-auto mb-3 border border-green-300">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <div className="text-center py-4">
+                  <div className="w-16 h-16 rounded-full bg-green-100 text-green-700 flex items-center justify-center mx-auto mb-4 border-2 border-green-300">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-black text-black mb-1">
+                  <h3 className="text-2xl font-black text-black mb-2">
                     Rota Tamamlandı!
                   </h3>
-                  <p className="text-xs text-zinc-600 mb-5 leading-relaxed font-medium">
+                  <p className="text-sm text-zinc-600 mb-6 leading-relaxed font-medium">
                     Tüm paketler teslim edildi. Depoya dönüş rotasını tamamlayabilir veya ana panele dönebilirsiniz.
                   </p>
                   <button
                     onClick={handleExitNavigation}
-                    className="w-full rounded-xl bg-black hover:bg-zinc-900 text-green-400 border border-green-600 font-black py-3 text-sm shadow-md transition cursor-pointer"
+                    className="w-full rounded-2xl bg-black hover:bg-zinc-900 text-green-400 border border-green-600 font-black py-4 text-base shadow-lg transition cursor-pointer active:scale-98"
                   >
                     Normal Görünüme Dön
                   </button>
@@ -386,53 +414,53 @@ export default function App() {
                 /* Active Driver Navigation HUD */
                 <div>
                   {/* Top Status & Exit Header */}
-                  <div className="flex items-center justify-between border-b border-zinc-100 pb-3 mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-2.5 w-2.5 relative">
+                  <div className="flex items-center justify-between border-b border-zinc-150 pb-4 mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-3 w-3 relative">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-600"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-green-600"></span>
                       </span>
-                      <span className="text-xs font-black uppercase tracking-wider text-green-800 bg-green-100 border border-green-300 px-2.5 py-1 rounded-md">
+                      <span className="text-xs font-black uppercase tracking-wider text-green-900 bg-green-100 border border-green-300 px-3 py-1.5 rounded-lg shadow-2xs">
                         Durak {currentStopIndex + 1} / {deliveryStops.length}
                       </span>
                     </div>
 
                     <button
                       onClick={handleExitNavigation}
-                      className="text-xs font-bold text-zinc-500 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition cursor-pointer"
+                      className="text-xs font-bold text-zinc-500 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition cursor-pointer"
                     >
                       Sürüşten Çık
                     </button>
                   </div>
 
                   {/* Target Customer Info */}
-                  <div className="mb-4">
-                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wide">
+                  <div className="mb-5">
+                    <span className="text-xs font-black text-zinc-400 uppercase tracking-wider">
                       Hedef Müşteri
                     </span>
-                    <h3 className="text-base font-black text-black truncate mt-0.5">
+                    <h3 className="text-2xl font-black text-black truncate mt-1">
                       {currentTargetStop?.customer_name}
                     </h3>
-                    <p className="text-xs text-zinc-600 font-medium leading-relaxed mt-1 line-clamp-2">
+                    <p className="text-sm text-zinc-600 font-medium leading-relaxed mt-1.5 line-clamp-2">
                       {currentTargetStop?.raw_address}
                     </p>
 
-                    <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs font-medium text-zinc-700 bg-zinc-50 rounded-xl p-3 border border-zinc-200">
+                    <div className="mt-4 grid grid-cols-3 gap-3 text-center text-sm font-medium text-zinc-700 bg-zinc-50 rounded-2xl p-4 border border-zinc-200">
                       <div>
-                        <span className="text-zinc-500 text-[10px] block font-bold uppercase">Mesafe</span>
-                        <strong className="text-black font-black text-sm">
+                        <span className="text-zinc-500 text-[11px] block font-bold uppercase">Mesafe</span>
+                        <strong className="text-black font-black text-lg">
                           {distanceToNextStop} km
                         </strong>
                       </div>
                       <div className="border-x border-zinc-200 px-1">
-                        <span className="text-zinc-500 text-[10px] block font-bold uppercase">Tahmini Varış</span>
-                        <strong className="text-green-700 font-black text-sm">
+                        <span className="text-zinc-500 text-[11px] block font-bold uppercase">Tahmini Varış</span>
+                        <strong className="text-green-700 font-black text-lg">
                           ~{Math.max(1, Math.round(distanceToNextStop * 2.2))} dk
                         </strong>
                       </div>
                       <div>
-                        <span className="text-zinc-500 text-[10px] block font-bold uppercase">Ağırlık</span>
-                        <strong className="text-black font-black text-sm">
+                        <span className="text-zinc-500 text-[11px] block font-bold uppercase">Ağırlık</span>
+                        <strong className="text-black font-black text-lg">
                           {currentTargetStop?.weight_kg ?? 1} kg
                         </strong>
                       </div>
@@ -442,7 +470,7 @@ export default function App() {
                   {/* Mark Delivered Button */}
                   <button
                     onClick={handleMarkDelivered}
-                    className="w-full rounded-xl bg-green-700 hover:bg-green-800 text-white font-black py-3.5 text-sm shadow-md shadow-green-900/20 transition cursor-pointer flex items-center justify-center gap-2 active:scale-98"
+                    className="w-full rounded-2xl bg-green-700 hover:bg-green-800 text-white font-black py-4 text-base shadow-xl shadow-green-900/25 transition cursor-pointer flex items-center justify-center gap-2 active:scale-98"
                   >
                     <span>Teslim Edildi</span>
                   </button>

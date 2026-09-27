@@ -129,7 +129,7 @@ def get_route_driving_geometry(
 
     try:
         coord_str = ";".join(f"{lon},{lat}" for lat, lon in coordinates)
-        url = f"{OSRM_ROUTE_URL}/{coord_str}?overview=full&geometries=geojson"
+        url = f"{OSRM_ROUTE_URL}/{coord_str}?overview=full&geometries=geojson&steps=true"
         response = requests.get(url, headers=OSRM_HEADERS, timeout=OSRM_TIMEOUT)
 
         if response.status_code == 200:
@@ -140,15 +140,31 @@ def get_route_driving_geometry(
                 osrm_coords = best_route["geometry"]["coordinates"]
                 leaflet_coords = [[lat, lon] for lon, lat in osrm_coords]
 
+                # Extract individual leg road geometries
+                legs_geometry: List[List[List[float]]] = []
+                for leg_idx, leg in enumerate(best_route.get("legs", [])):
+                    leg_pts: List[List[float]] = []
+                    for step in leg.get("steps", []):
+                        for lon, lat in step.get("geometry", {}).get("coordinates", []):
+                            leg_pts.append([lat, lon])
+                    if not leg_pts and leg_idx < len(coordinates) - 1:
+                        leg_pts = [
+                            [coordinates[leg_idx][0], coordinates[leg_idx][1]],
+                            [coordinates[leg_idx + 1][0], coordinates[leg_idx + 1][1]],
+                        ]
+                    legs_geometry.append(leg_pts)
+
                 logger.info(
-                    "OSRM road geometry fetched: %s waypoints, %.1f km, %.1f mins.",
+                    "OSRM road geometry fetched: %s waypoints, %s legs, %.1f km, %.1f mins.",
                     len(leaflet_coords),
+                    len(legs_geometry),
                     best_route["distance"] / 1000,
                     best_route["duration"] / 60,
                 )
 
                 return {
                     "geometry": leaflet_coords,
+                    "legs_geometry": legs_geometry,
                     "distance_m": best_route["distance"],
                     "duration_s": best_route["duration"],
                 }
@@ -156,8 +172,13 @@ def get_route_driving_geometry(
         logger.warning("OSRM route geometry request failed, falling back to straight lines: %s", exc)
 
     # Fallback to straight segments between stops
+    fallback_legs = [
+        [[coordinates[i][0], coordinates[i][1]], [coordinates[i + 1][0], coordinates[i + 1][1]]]
+        for i in range(len(coordinates) - 1)
+    ]
     return {
         "geometry": [[lat, lon] for lat, lon in coordinates],
+        "legs_geometry": fallback_legs,
         "distance_m": 0,
         "duration_s": 0,
     }

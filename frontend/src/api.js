@@ -13,6 +13,9 @@ export const createOrder = (payload) =>
 export const deleteOrder = (orderId) =>
   api.delete(`/orders/${orderId}`).then((r) => r.data);
 
+export const clearAllOrders = () =>
+  api.delete('/orders').then((r) => r.data);
+
 export const updateOrder = (orderId, payload) =>
   api.patch(`/orders/${orderId}`, payload).then((r) => r.data);
 

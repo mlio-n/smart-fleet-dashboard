@@ -491,6 +491,19 @@ def delete_order(order_id: int, db: Session = Depends(get_db)) -> None:
     logger.info("Order id=%s deleted successfully.", order_id)
 
 
+@app.delete(
+    "/orders",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete all orders",
+    description="Permanently deletes all orders from the database.",
+)
+def delete_all_orders(db: Session = Depends(get_db)) -> None:
+    """Delete all orders from database."""
+    db.query(Order).delete()
+    db.commit()
+    logger.info("All orders cleared successfully.")
+
+
 @app.patch(
     "/orders/{order_id}",
     response_model=OrderResponse,
@@ -724,6 +737,7 @@ def generate_routes(
             "route_distance_m": actual_distance,
             "duration_minutes": duration_mins,
             "geometry":         road_data.get("geometry", []),
+            "legs_geometry":    road_data.get("legs_geometry", []),
         })
 
     # ------------------------------------------------------------------
