@@ -39,7 +39,7 @@ export default function RoutePanel({ onRoutesGenerated, onStartJourney, scale = 
   return (
     <div
       style={{ padding: `${pad}px` }}
-      className="sticky bottom-0 bg-white/85 backdrop-blur-xl border-t border-white/70 shadow-[0_-4px_20px_rgba(0,0,0,0.04)] z-10"
+      className="sticky bottom-0 glass-panel !border-b-0 !border-x-0 !border-t !rounded-none shadow-[0_-4px_20px_rgba(0,0,0,0.04)] z-10"
     >
       <button
         onClick={handleGenerate}
@@ -78,7 +78,7 @@ export default function RoutePanel({ onRoutesGenerated, onStartJourney, scale = 
             padding: `${Math.round(10 * scale)}px`,
             fontSize: `${labelSize}px`,
           }}
-          className="rounded-2xl bg-white/80 backdrop-blur-md border border-green-300 text-green-950 shadow-xs"
+          className="rounded-2xl glass-panel-subtle !border-green-300/80 text-green-950 shadow-xs"
         >
           <div className="flex items-center justify-between font-black text-black">
             <span>Dağıtım Rotası Hazır</span>

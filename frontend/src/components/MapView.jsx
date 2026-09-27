@@ -64,13 +64,13 @@ const VEHICLE_ICON = L.divIcon({
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      background: rgba(255, 107, 0, 0.4);
+      background: rgba(37, 99, 235, 0.45);
       animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
     "></span>
     <div style="
       position: relative;
-      background: #000000;
-      color: #ff6b00;
+      background: #0f172a;
+      color: #3b82f6;
       width: 36px;
       height: 36px;
       border-radius: 50%;
@@ -78,7 +78,7 @@ const VEHICLE_ICON = L.divIcon({
       align-items: center;
       justify-content: center;
       border: 2.5px solid #ffffff;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.5);
     ">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
         <rect x="1" y="4" width="15" height="12" rx="2" />
@@ -309,8 +309,8 @@ export default function MapView({
             weight = 3.5;
             dashArray = '6, 6';
           } else if (legIdx === currentStopIndex) {
-            // Active leg (arabanın olduğu yerden gideceği yer): standout vibrant amber/orange
-            color = '#ff6b00';
+            // Active leg (arabanın olduğu yerden gideceği yer): standout vibrant navigation blue
+            color = '#2563eb';
             opacity = 1.0;
             weight = 7;
           }

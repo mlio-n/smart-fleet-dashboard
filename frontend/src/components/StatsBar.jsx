@@ -8,7 +8,7 @@ const CARDS = [
 
 export default function StatsBar({ stats, onFilter, activeFilter }) {
   return (
-    <header className="flex items-center justify-between px-8 py-5 bg-white/75 backdrop-blur-2xl border-b border-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.04)] z-20 relative">
+    <header className="flex items-center justify-between px-8 py-5 glass-panel !border-t-0 !border-x-0 !border-b !rounded-none z-20 relative">
       {/* Specular top reflection highlight */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />
 

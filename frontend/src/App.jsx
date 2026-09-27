@@ -250,14 +250,14 @@ export default function App() {
         {/* ── Resizable Sidebar (Smooth Slide-out Animation) ─────── */}
         <aside
           style={{ width: isNavigating ? '0px' : `${sidebarWidth}px` }}
-          className={`flex-shrink-0 flex flex-col bg-white/75 backdrop-blur-2xl border-r border-white/60 relative transition-all duration-500 ease-in-out overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)] ${
+          className={`flex-shrink-0 flex flex-col glass-panel !border-y-0 !border-l-0 !border-r !rounded-none relative transition-all duration-500 ease-in-out overflow-hidden ${
             isNavigating ? '-translate-x-12 opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'
           }`}
         >
             {/* Header */}
             <div
               style={{ padding: `${paddingScaled}px` }}
-              className="bg-white/70 backdrop-blur-xl border-b border-white/60 shadow-xs relative"
+              className="glass-panel-subtle !border-t-0 !border-x-0 !border-b !rounded-none shadow-xs relative"
             >
               {/* Specular highlight */}
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />
@@ -402,13 +402,15 @@ export default function App() {
 
           {/* ── Floating Driver HUD (Ultra-Glassmorphic Display) ─────────── */}
           {isNavigating && (
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] bg-white/85 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] rounded-3xl p-7 w-11/12 max-w-xl border border-white/60 animate-in fade-in slide-in-from-top-10 zoom-in-95 duration-500 ease-out">
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] glass-panel rounded-3xl p-7 w-11/12 max-w-xl animate-in fade-in slide-in-from-top-10 zoom-in-95 duration-500 ease-out relative overflow-hidden">
               {/* Glass specular top reflection highlight */}
-              <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />
+              <div className="absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none" />
+              {/* Subtle glass sheen overlay */}
+              <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-white/5 pointer-events-none rounded-3xl" />
 
               {/* Total Route Mini Banner */}
               {routes?.total_distance_m && (
-                <div className="flex items-center justify-between text-[11px] font-bold text-zinc-600 bg-zinc-100/80 backdrop-blur-xs rounded-xl px-3 py-1.5 mb-3.5 border border-zinc-200/60">
+                <div className="relative flex items-center justify-between text-[11px] font-bold text-zinc-700 glass-panel-subtle rounded-xl px-3.5 py-2 mb-3.5">
                   <span className="flex items-center gap-1.5 text-green-900 font-extrabold">
                     <span className="w-2 h-2 rounded-full bg-green-600 inline-block animate-pulse"></span>
                     Optimum Dağıtım Rotası
@@ -420,7 +422,7 @@ export default function App() {
               )}
               {currentStopIndex >= deliveryStops.length ? (
                 /* Route Completed Screen */
-                <div className="text-center py-4">
+                <div className="relative text-center py-4">
                   <div className="w-16 h-16 rounded-full bg-green-100 text-green-700 flex items-center justify-center mx-auto mb-4 border-2 border-green-300">
                     <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -441,22 +443,22 @@ export default function App() {
                 </div>
               ) : (
                 /* Active Driver Navigation HUD */
-                <div>
+                <div className="relative">
                   {/* Top Status & Exit Header */}
-                  <div className="flex items-center justify-between border-b border-zinc-150 pb-4 mb-4">
+                  <div className="flex items-center justify-between border-b border-zinc-200/60 pb-3.5 mb-4">
                     <div className="flex items-center gap-2.5">
                       <span className="flex h-3 w-3 relative">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-3 w-3 bg-green-600"></span>
                       </span>
-                      <span className="text-xs font-black uppercase tracking-wider text-green-900 bg-green-100 border border-green-300 px-3 py-1.5 rounded-lg shadow-2xs">
+                      <span className="text-xs font-black uppercase tracking-wider text-green-950 bg-green-100/90 border border-green-300/80 px-3 py-1.5 rounded-lg shadow-2xs backdrop-blur-xs">
                         Durak {currentStopIndex + 1} / {deliveryStops.length}
                       </span>
                     </div>
 
                     <button
                       onClick={handleExitNavigation}
-                      className="text-xs font-bold text-zinc-500 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition cursor-pointer"
+                      className="text-xs font-bold text-zinc-500 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50/80 transition cursor-pointer"
                     >
                       Sürüşten Çık
                     </button>
@@ -464,7 +466,7 @@ export default function App() {
 
                   {/* Target Customer Info */}
                   <div className="mb-5">
-                    <span className="text-xs font-black text-zinc-400 uppercase tracking-wider">
+                    <span className="text-xs font-black text-zinc-500 uppercase tracking-wider">
                       Hedef Müşteri
                     </span>
                     <h3 className="text-2xl font-black text-black truncate mt-1">
@@ -474,16 +476,16 @@ export default function App() {
                       {currentTargetStop?.raw_address}
                     </p>
 
-                    <div className="mt-4 grid grid-cols-3 gap-3 text-center text-sm font-medium text-zinc-700 bg-zinc-50 rounded-2xl p-4 border border-zinc-200">
+                    <div className="mt-4 grid grid-cols-3 gap-3 text-center text-sm font-medium text-zinc-700 glass-panel-subtle rounded-2xl p-4">
                       <div>
                         <span className="text-zinc-500 text-[11px] block font-bold uppercase">Mesafe</span>
                         <strong className="text-black font-black text-lg">
                           {distanceToNextStop} km
                         </strong>
                       </div>
-                      <div className="border-x border-zinc-200 px-1">
+                      <div className="border-x border-zinc-300/60 px-1">
                         <span className="text-zinc-500 text-[11px] block font-bold uppercase">Tahmini Varış</span>
-                        <strong className="text-green-700 font-black text-lg">
+                        <strong className="text-blue-600 font-black text-lg">
                           ~{Math.max(1, Math.round(distanceToNextStop * 2.2))} dk
                         </strong>
                       </div>

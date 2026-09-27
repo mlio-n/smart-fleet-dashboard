@@ -137,7 +137,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
-        className="w-full max-w-xl rounded-3xl bg-white/85 backdrop-blur-2xl p-7 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] border border-white/70 animate-in fade-in zoom-in-95 duration-200 relative overflow-hidden"
+        className="w-full max-w-xl rounded-3xl glass-panel p-7 animate-in fade-in zoom-in-95 duration-200 relative overflow-hidden"
       >
         {/* Specular highlight border effect at top */}
         <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />

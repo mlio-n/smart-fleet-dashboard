@@ -56,10 +56,10 @@ export default function OrderCard({
         borderRadius: `${radius}px`,
         gap: `${gap}px`,
       }}
-      className={`group relative flex flex-col justify-between w-full border border-white/80 border-l-4 ${config.leftBorder} bg-white/85 backdrop-blur-xl shadow-xs transition-all duration-200 cursor-pointer select-text ${
+      className={`group relative flex flex-col justify-between w-full border-l-4 ${config.leftBorder} glass-card transition-all duration-200 cursor-pointer select-text ${
         isSelected
-          ? 'ring-2 ring-black bg-green-50/70 shadow-lg scale-[1.01]'
-          : 'hover:border-zinc-300/80 hover:bg-white/95 hover:shadow-md'
+          ? 'ring-2 ring-black !bg-green-50/80 shadow-lg scale-[1.01]'
+          : 'hover:!bg-white/85 hover:shadow-md'
       }`}
     >
       <div>
