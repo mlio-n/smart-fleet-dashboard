@@ -457,9 +457,13 @@ export default function App() {
       {isNewOrderOpen && (
         <NewOrderModal
           onClose={() => setIsNewOrderOpen(false)}
-          onCreated={() => {
-            setIsNewOrderOpen(false);
+          onCreated={(keepOpen) => {
+            if (!keepOpen) {
+              setIsNewOrderOpen(false);
+            }
             refresh();
+            // Automatically poll again once background geocoding completes
+            setTimeout(() => refresh(), 1800);
           }}
         />
       )}

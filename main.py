@@ -17,6 +17,7 @@ Architecture highlights
   routable orders (PENDING + RESOLVED_MANUALLY) and transitions them to ROUTED.
 """
 
+import re
 import time
 import logging
 from collections.abc import AsyncGenerator
@@ -143,6 +144,36 @@ DEPOT_LATITUDE  = 37.7765
 DEPOT_LONGITUDE = 29.0864
 
 
+def _extract_street_fallback(raw: str) -> str | None:
+    """
+    Extract street/avenue name and city for Nominatim fallback when exact
+    Turkish address (with door number or district mismatch) returns empty.
+    """
+    if not raw:
+        return None
+    match = re.search(
+        r'([A-Za-z\u00C0-\u017F\s]+(?:Caddesi|Bulvarı|Cad\.|Bulv\.|Sokak|Sokağı|Sok\.))',
+        raw,
+        re.IGNORECASE,
+    )
+    if not match:
+        return None
+    street = match.group(1).strip()
+    if ',' in street:
+        street = street.split(',')[-1].strip()
+    elif 'Mahallesi' in street:
+        street = street.split('Mahallesi')[-1].strip()
+    elif 'Mah.' in street:
+        street = street.split('Mah.')[-1].strip()
+
+    city = "Denizli"
+    for d in ["Pamukkale", "Merkezefendi"]:
+        if d.lower() in raw.lower():
+            city = f"{d}, Denizli"
+            break
+    return f"{street}, {city}"
+
+
 # ---------------------------------------------------------------------------
 # Background geocoding worker
 # ---------------------------------------------------------------------------
@@ -204,6 +235,36 @@ def _process_orders_geocoding(order_ids: list[int]) -> None:
                 )
                 # Treat network errors the same as empty results → ANOMALY
                 results = []
+
+            # Fallback: if OSM has no specific house number in Denizli,
+            # query the street & district directly to locate the real road.
+            if not results:
+                fallback_query = _extract_street_fallback(order.raw_address)
+                if fallback_query and fallback_query.lower() != order.raw_address.lower():
+                    logger.info(
+                        "Order id=%s Nominatim empty, trying street fallback: %r",
+                        order_id, fallback_query,
+                    )
+                    try:
+                        time.sleep(RATE_LIMIT_SLEEP)
+                        fb_resp = requests.get(
+                            NOMINATIM_URL,
+                            params={
+                                "q":              fallback_query,
+                                "format":         "json",
+                                "addressdetails": 1,
+                                "limit":          1,
+                            },
+                            headers=NOMINATIM_HEADERS,
+                            timeout=10,
+                        )
+                        if fb_resp.status_code == 200:
+                            results = fb_resp.json()
+                    except requests.RequestException as fb_exc:
+                        logger.warning(
+                            "Fallback geocoding request failed for order id=%s: %s",
+                            order_id, fb_exc,
+                        )
 
             # ------------------------------------------------------------------
             # Business rule evaluation
