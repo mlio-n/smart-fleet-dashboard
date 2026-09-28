@@ -24,6 +24,7 @@ export default function App() {
 
   // ─── Navigation Mode State ─────────────────────────────────────────
   const [isNavigating, setIsNavigating] = useState(false);
+  const [showRoutePreview, setShowRoutePreview] = useState(false);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
 
   // ─── Resizable Sidebar State (Default 25%) ─────────────────────────
@@ -122,6 +123,7 @@ export default function App() {
       await clearAllOrders();
       setSelectedOrder(null);
       setRoutes(null);
+      setShowRoutePreview(false);
       refresh();
     } catch (err) {
       alert('Siparişler temizlenirken hata oluştu.');
@@ -172,7 +174,8 @@ export default function App() {
 
   // Start Navigation Journey (Zooms directly to courier's center location)
   const handleStartJourney = useCallback((routeData) => {
-    setRoutes(routeData);
+    if (routeData) setRoutes(routeData);
+    setShowRoutePreview(false);
     setIsNavigating(true);
     setCurrentStopIndex(0);
     setSelectedOrder(null); // Lets MapView zoom directly to courier center
@@ -181,8 +184,13 @@ export default function App() {
   // Exit Navigation Mode
   const handleExitNavigation = useCallback(() => {
     setIsNavigating(false);
+    setShowRoutePreview(false);
     setCurrentStopIndex(0);
     setSelectedOrder(null);
+  }, []);
+
+  const handleClosePreview = useCallback(() => {
+    setShowRoutePreview(false);
   }, []);
 
   // Mark Delivered & Advance to Next Stop
@@ -223,6 +231,7 @@ export default function App() {
           selectedOrder={selectedOrder}
           routes={routes}
           isNavigating={isNavigating}
+          showRoutePreview={showRoutePreview}
           currentStopIndex={currentStopIndex}
           deliveryStops={deliveryStops}
         />
@@ -231,7 +240,7 @@ export default function App() {
       {/* ── Top Floating Glass Island (iOS Style) ── */}
       <div
         className={`absolute top-3.5 inset-x-4 z-30 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
-          isNavigating
+          isNavigating || showRoutePreview
             ? '-translate-y-32 opacity-0 pointer-events-none'
             : 'translate-y-0 opacity-100'
         }`}
@@ -248,7 +257,7 @@ export default function App() {
           left: '16px',
         }}
         className={`absolute z-20 flex flex-col glass-panel rounded-3xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden shadow-[0_20px_50px_-10px_rgba(0,0,0,0.18)] pointer-events-auto ${
-          isNavigating ? '-translate-x-[120%] opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'
+          isNavigating || showRoutePreview ? '-translate-x-[120%] opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'
         }`}
       >
         {/* Header */}
@@ -368,18 +377,21 @@ export default function App() {
 
         {/* Route generation panel with Start Journey trigger */}
         <RoutePanel
+          routes={routes}
           scale={scale}
           onRoutesGenerated={(data) => {
             setRoutes(data);
+            setShowRoutePreview(true);
             refresh();
           }}
+          onOpenPreview={() => setShowRoutePreview(true)}
           onStartJourney={handleStartJourney}
         />
       </aside>
 
       {/* ── Resizer Drag Bar with Smooth Collapse ─────── */}
       <div
-        onMouseDown={isNavigating ? undefined : startResizing}
+        onMouseDown={isNavigating || showRoutePreview ? undefined : startResizing}
         style={{
           left: `${sidebarWidth + 20}px`,
           top: '86px',
@@ -387,19 +399,22 @@ export default function App() {
         }}
         className={`absolute w-2 cursor-col-resize z-25 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-green-600/70 rounded-full flex items-center justify-center ${
           isResizing ? 'bg-green-700/80 w-2.5' : 'bg-transparent'
-        } ${isNavigating ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        } ${isNavigating || showRoutePreview ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         title="Paneli genişletmek/daraltmak için sürükleyin"
       />
 
       {/* ── Floating Driver HUD (VisionOS / Dynamic Island Style) ─────────── */}
       <NavigationHUD
         isNavigating={isNavigating}
+        showRoutePreview={showRoutePreview}
         routes={routes}
         currentStopIndex={currentStopIndex}
         deliveryStops={deliveryStops}
         currentTargetStop={currentTargetStop}
         distanceToNextStop={distanceToNextStop}
+        onStartJourney={handleStartJourney}
         onExitNavigation={handleExitNavigation}
+        onClosePreview={handleClosePreview}
         onMarkDelivered={handleMarkDelivered}
       />
 

@@ -1,10 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { generateRoutes } from '../api';
 
-export default function RoutePanel({ onRoutesGenerated, onStartJourney, scale = 1 }) {
+export default function RoutePanel({ routes, onRoutesGenerated, onStartJourney, onOpenPreview, scale = 1 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+
+  useEffect(() => {
+    if (!routes) {
+      setResult(null);
+    }
+  }, [routes]);
 
   const FIXED_VEHICLES = 1;
   const FIXED_CAPACITY = 1000;
@@ -19,7 +25,6 @@ export default function RoutePanel({ onRoutesGenerated, onStartJourney, scale = 
       });
       setResult(data);
       onRoutesGenerated?.(data);
-      onStartJourney?.(data);
     } catch (err) {
       setError(err.response?.data?.detail || 'Rota optimizasyonu başarısız oldu.');
     } finally {
@@ -100,7 +105,13 @@ export default function RoutePanel({ onRoutesGenerated, onStartJourney, scale = 
           )}
 
           <button
-            onClick={() => onStartJourney?.(result)}
+            onClick={() => {
+              if (onOpenPreview) {
+                onOpenPreview();
+              } else {
+                onStartJourney?.(result);
+              }
+            }}
             style={{
               marginTop: `${Math.round(8 * scale)}px`,
               padding: `${Math.round(9 * scale)}px`,
@@ -108,7 +119,7 @@ export default function RoutePanel({ onRoutesGenerated, onStartJourney, scale = 
             }}
             className="w-full rounded-lg bg-black hover:bg-zinc-900 text-green-400 border border-green-600 font-black transition cursor-pointer flex items-center justify-center gap-2 shadow-sm"
           >
-            Yolculuğa Başla
+            Yolculuk Kartını Aç
           </button>
         </div>
       )}

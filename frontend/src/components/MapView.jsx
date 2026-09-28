@@ -130,10 +130,10 @@ function FlyToSelected({ selected, isNavigating }) {
   return null;
 }
 
-function AutoFitRoute({ routes, isNavigating }) {
+function AutoFitRoute({ routes, isNavigating, showRoutePreview }) {
   const map = useMap();
   useEffect(() => {
-    if (!isNavigating && routes?.routes?.length > 0) {
+    if (!isNavigating && !showRoutePreview && routes?.routes?.length > 0) {
       const allPoints = [];
       routes.routes.forEach((r) => {
         if (r.geometry && r.geometry.length > 0) {
@@ -150,7 +150,18 @@ function AutoFitRoute({ routes, isNavigating }) {
         map.fitBounds(allPoints, { padding: [50, 50], maxZoom: 15 });
       }
     }
-  }, [routes, isNavigating, map]);
+  }, [routes, isNavigating, showRoutePreview, map]);
+  return null;
+}
+
+// Smoothly zooms into center depot when route preview is triggered
+function CenterPreviewZoom({ showRoutePreview }) {
+  const map = useMap();
+  useEffect(() => {
+    if (showRoutePreview) {
+      map.flyTo(MAP_CENTER, 15, { duration: 1.1 });
+    }
+  }, [showRoutePreview, map]);
   return null;
 }
 
@@ -166,7 +177,7 @@ function CourierNavigationFocus({ isNavigating, courierPosition }) {
 }
 
 // Automatically recalculates map dimensions during smooth sidebar slide animations
-function AutoResizeMap({ isNavigating }) {
+function AutoResizeMap({ isNavigating, showRoutePreview }) {
   const map = useMap();
   useEffect(() => {
     const t1 = setTimeout(() => map.invalidateSize(), 100);
@@ -177,7 +188,7 @@ function AutoResizeMap({ isNavigating }) {
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [isNavigating, map]);
+  }, [isNavigating, showRoutePreview, map]);
   return null;
 }
 
@@ -186,6 +197,7 @@ export default function MapView({
   selectedOrder,
   routes,
   isNavigating = false,
+  showRoutePreview = false,
   currentStopIndex = 0,
   deliveryStops = [],
 }) {
@@ -257,10 +269,11 @@ export default function MapView({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      <FlyToSelected selected={selectedOrder} isNavigating={isNavigating} />
-      <AutoFitRoute routes={routes} isNavigating={isNavigating} />
+      <FlyToSelected selected={selectedOrder} isNavigating={isNavigating || showRoutePreview} />
+      <AutoFitRoute routes={routes} isNavigating={isNavigating} showRoutePreview={showRoutePreview} />
+      <CenterPreviewZoom showRoutePreview={showRoutePreview} />
       <CourierNavigationFocus isNavigating={isNavigating} courierPosition={courierPosition} />
-      <AutoResizeMap isNavigating={isNavigating} />
+      <AutoResizeMap isNavigating={isNavigating} showRoutePreview={showRoutePreview} />
 
       {/* Main Depot / Distribution Centre Marker */}
       <Marker position={MAP_CENTER} icon={DEPOT_ICON}>
