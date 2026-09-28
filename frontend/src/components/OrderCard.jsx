@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 const STATUS_CONFIG = {
   PENDING: {
     label: 'Beklemede',
@@ -26,7 +28,7 @@ const STATUS_CONFIG = {
   },
 };
 
-export default function OrderCard({
+function OrderCard({
   order,
   onResolve,
   onRetry,
@@ -183,3 +185,5 @@ export default function OrderCard({
     </div>
   );
 }
+
+export default memo(OrderCard);

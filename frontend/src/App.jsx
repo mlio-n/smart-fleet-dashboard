@@ -120,20 +120,18 @@ export default function App() {
   }, [refresh]);
 
   // Handle delete order
-  const handleDeleteOrder = async (orderId) => {
+  const handleDeleteOrder = useCallback(async (orderId) => {
     try {
       await deleteOrder(orderId);
-      if (selectedOrder?.id === orderId) {
-        setSelectedOrder(null);
-      }
+      setSelectedOrder((current) => (current?.id === orderId ? null : current));
       refresh();
     } catch (err) {
       alert(err.response?.data?.detail || 'Sipariş silinirken hata oluştu.');
     }
-  };
+  }, [refresh]);
 
   // Handle clear all orders
-  const handleClearAllOrders = async () => {
+  const handleClearAllOrders = useCallback(async () => {
     if (!window.confirm('Tüm siparişleri ve mevcut rotayı silmek istediğinize emin misiniz?')) {
       return;
     }
@@ -145,17 +143,17 @@ export default function App() {
     } catch (err) {
       alert('Siparişler temizlenirken hata oluştu.');
     }
-  };
+  }, [refresh]);
 
   // Handle re-geocode order
-  const handleRegeocode = async (orderId) => {
+  const handleRegeocode = useCallback(async (orderId) => {
     try {
       await regeocodeOrder(orderId);
       refresh();
     } catch (err) {
       alert(err.response?.data?.detail || 'Yeniden geocoding başlatılamadı.');
     }
-  };
+  }, [refresh]);
 
   // ─── Navigation Stops & Distance ─────────────────────────────────
   const activeRoute = routes?.routes?.[0];
@@ -190,19 +188,19 @@ export default function App() {
   }, [prevStop, currentTargetStop]);
 
   // Start Navigation Journey (Zooms directly to courier's center location)
-  const handleStartJourney = (routeData) => {
+  const handleStartJourney = useCallback((routeData) => {
     setRoutes(routeData);
     setIsNavigating(true);
     setCurrentStopIndex(0);
     setSelectedOrder(null); // Lets MapView zoom directly to courier center
-  };
+  }, []);
 
   // Exit Navigation Mode
-  const handleExitNavigation = () => {
+  const handleExitNavigation = useCallback(() => {
     setIsNavigating(false);
     setCurrentStopIndex(0);
     setSelectedOrder(null);
-  };
+  }, []);
 
   // Mark Delivered & Advance to Next Stop
   const handleMarkDelivered = async () => {

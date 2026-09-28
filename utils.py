@@ -11,6 +11,8 @@ import math
 import logging
 from typing import List, Tuple, Dict, Any
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 logger = logging.getLogger("smart_fleet.routing")
 
@@ -23,6 +25,18 @@ OSRM_TABLE_URL = "https://router.project-osrm.org/table/v1/driving"
 OSRM_ROUTE_URL = "https://router.project-osrm.org/route/v1/driving"
 OSRM_HEADERS = {"User-Agent": "SmartFleet_Logistics/1.0"}
 OSRM_TIMEOUT = 5  # seconds timeout for external routing calls
+
+# Reusable HTTP session with connection pooling and retries
+def _create_http_session() -> requests.Session:
+    session = requests.Session()
+    session.headers.update(OSRM_HEADERS)
+    retries = Retry(total=2, backoff_factor=0.2, status_forcelist=[500, 502, 503, 504])
+    adapter = HTTPAdapter(pool_connections=10, pool_maxsize=10, max_retries=retries)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
+_osrm_session = _create_http_session()
 
 
 # ---------------------------------------------------------------------------
@@ -67,11 +81,11 @@ def create_distance_matrix(
     if n == 0:
         return []
 
-    # 1. Try real road network distances via OSRM Table API
+    # 1. Try real road network distances via OSRM Table API with pooled session
     try:
         coord_str = ";".join(f"{lon},{lat}" for lat, lon in coordinates)
         url = f"{OSRM_TABLE_URL}/{coord_str}?annotations=distance"
-        response = requests.get(url, headers=OSRM_HEADERS, timeout=OSRM_TIMEOUT)
+        response = _osrm_session.get(url, timeout=OSRM_TIMEOUT)
         
         if response.status_code == 200:
             data = response.json()
@@ -87,14 +101,24 @@ def create_distance_matrix(
     except Exception as exc:
         logger.warning("OSRM distance table request failed, falling back to Haversine: %s", exc)
 
-    # 2. Fallback: Haversine distance with 1.3 urban circuity factor
+    # 2. Optimized Fallback: Pre-convert coordinates to radians once upfront
+    rad_coords = [
+        (math.radians(lat), math.radians(lon))
+        for lat, lon in coordinates
+    ]
     matrix: List[List[int]] = [[0] * n for _ in range(n)]
     for i in range(n):
+        phi1, lam1 = rad_coords[i]
         for j in range(i + 1, n):
-            dist = int(round(haversine(
-                coordinates[i][0], coordinates[i][1],
-                coordinates[j][0], coordinates[j][1],
-            ) * 1.3))
+            phi2, lam2 = rad_coords[j]
+            d_phi = phi2 - phi1
+            d_lam = lam2 - lam1
+            a = (
+                math.sin(d_phi / 2) ** 2
+                + math.cos(phi1) * math.cos(phi2) * math.sin(d_lam / 2) ** 2
+            )
+            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+            dist = int(round(EARTH_RADIUS_M * c * 1.3))
             matrix[i][j] = dist
             matrix[j][i] = dist
 
@@ -130,7 +154,7 @@ def get_route_driving_geometry(
     try:
         coord_str = ";".join(f"{lon},{lat}" for lat, lon in coordinates)
         url = f"{OSRM_ROUTE_URL}/{coord_str}?overview=full&geometries=geojson&steps=true"
-        response = requests.get(url, headers=OSRM_HEADERS, timeout=OSRM_TIMEOUT)
+        response = _osrm_session.get(url, timeout=OSRM_TIMEOUT)
 
         if response.status_code == 200:
             data = response.json()

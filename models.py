@@ -87,6 +87,7 @@ class Order(Base):
         Enum(OrderStatus),
         default=OrderStatus.PENDING,
         nullable=False,
+        index=True,
         comment="Current lifecycle state of the order.",
     )
 
@@ -170,6 +171,7 @@ class Order(Base):
         DateTime,
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
+        index=True,
         comment="UTC timestamp when the order record was first created.",
     )
 

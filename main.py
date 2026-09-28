@@ -25,8 +25,10 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 import requests
+from requests.adapters import HTTPAdapter
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from database import Base, SessionLocal, engine, get_db
@@ -110,8 +112,6 @@ def health_check() -> dict:
 )
 def order_stats(db: Session = Depends(get_db)) -> dict:
     """Aggregate order counts per status for the dashboard stats bar."""
-    from sqlalchemy import func
-
     rows = (
         db.query(Order.status, func.count(Order.id))
         .group_by(Order.status)
@@ -198,6 +198,11 @@ def _process_orders_geocoding(order_ids: list[int]) -> None:
         Primary keys of the Order rows to process, in insertion order.
     """
     db: Session = SessionLocal()
+    session = requests.Session()
+    session.headers.update(NOMINATIM_HEADERS)
+    adapter = HTTPAdapter(pool_connections=5, pool_maxsize=5)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
 
     try:
         for order_id in order_ids:
@@ -215,7 +220,7 @@ def _process_orders_geocoding(order_ids: list[int]) -> None:
             # Nominatim API request
             # ------------------------------------------------------------------
             try:
-                response = requests.get(
+                response = session.get(
                     NOMINATIM_URL,
                     params={
                         "q":              order.raw_address,
@@ -223,7 +228,6 @@ def _process_orders_geocoding(order_ids: list[int]) -> None:
                         "addressdetails": 1,
                         "limit":          1,
                     },
-                    headers=NOMINATIM_HEADERS,
                     timeout=10,
                 )
                 response.raise_for_status()
@@ -247,7 +251,7 @@ def _process_orders_geocoding(order_ids: list[int]) -> None:
                     )
                     try:
                         time.sleep(RATE_LIMIT_SLEEP)
-                        fb_resp = requests.get(
+                        fb_resp = session.get(
                             NOMINATIM_URL,
                             params={
                                 "q":              fallback_query,
@@ -255,7 +259,6 @@ def _process_orders_geocoding(order_ids: list[int]) -> None:
                                 "addressdetails": 1,
                                 "limit":          1,
                             },
-                            headers=NOMINATIM_HEADERS,
                             timeout=10,
                         )
                         if fb_resp.status_code == 200:
@@ -304,8 +307,11 @@ def _process_orders_geocoding(order_ids: list[int]) -> None:
                     order.longitude  = lon
                     order.place_rank = place_rank
 
-            db.commit()
-            db.refresh(order)
+            try:
+                db.commit()
+            except Exception as commit_exc:
+                logger.error("Failed to commit order id=%s: %s", order_id, commit_exc)
+                db.rollback()
 
             # ------------------------------------------------------------------
             # Rate-limit guard required by OSM usage policy
@@ -313,6 +319,7 @@ def _process_orders_geocoding(order_ids: list[int]) -> None:
             time.sleep(RATE_LIMIT_SLEEP)
 
     finally:
+        session.close()
         db.close()
 
 
@@ -356,22 +363,17 @@ def create_orders_batch(
     new_orders: list[Order] = []
 
     for item in payload:
-        order = Order(
+        new_orders.append(Order(
             customer_name=item.customer_name,
             raw_address=item.raw_address,
             weight=item.weight,
             status=OrderStatus.PENDING,
-        )
-        db.add(order)
-        new_orders.append(order)
+        ))
 
-    db.commit()
-
-    # Refresh to populate auto-generated fields (id, created_at, …)
-    for order in new_orders:
-        db.refresh(order)
-
+    db.add_all(new_orders)
+    db.flush()
     order_ids = [o.id for o in new_orders]
+    db.commit()
 
     logger.info(
         "Batch ingested – %s order(s) saved (ids=%s). "
@@ -743,13 +745,12 @@ def generate_routes(
     # ------------------------------------------------------------------
     # 7 ─ Transition routed orders → ROUTED
     # ------------------------------------------------------------------
-    for idx, order in enumerate(routable_orders):
-        # Only update if the order was not dropped
-        order_node_index = idx + 1
-        if order_node_index not in dropped_node_set:
-            order.status = OrderStatus.ROUTED
-
-    db.commit()
+    if routed_order_ids:
+        db.query(Order).filter(Order.id.in_(routed_order_ids)).update(
+            {Order.status: OrderStatus.ROUTED},
+            synchronize_session=False,
+        )
+        db.commit()
 
     # ------------------------------------------------------------------
     # 8 ─ Build unassigned (dropped) list

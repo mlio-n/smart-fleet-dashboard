@@ -5,7 +5,7 @@ Establishes the SQLAlchemy engine and session factory for the SQLite backend.
 All other modules import `SessionLocal` and `Base` from here.
 """
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 # SQLite database file will be created in the project root.
@@ -17,6 +17,15 @@ engine = create_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False},
 )
+
+@event.listens_for(engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    """Enable Write-Ahead Logging (WAL) and memory caching for high concurrency."""
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.execute("PRAGMA cache_size=-64000")
+    cursor.close()
 
 # Each request gets its own independent database session.
 SessionLocal = sessionmaker(

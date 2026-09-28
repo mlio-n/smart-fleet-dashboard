@@ -93,23 +93,31 @@ const VEHICLE_ICON = L.divIcon({
   popupAnchor: [0, -22],
 });
 
+const iconCache = new Map();
+
 function createColoredIcon(color, isSelected) {
-  const size = isSelected ? 20 : 15;
-  const borderWidth = isSelected ? 3 : 2;
-  return L.divIcon({
-    className: '',
-    html: `<div style="
-      width: ${size}px; height: ${size}px;
-      background: ${color};
-      border: ${borderWidth}px solid white;
-      border-radius: 50%;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-      ${isSelected ? 'outline: 3px solid #15803d;' : ''}
-    "></div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2],
-  });
+  const key = `${color}_${isSelected ? 1 : 0}`;
+  let icon = iconCache.get(key);
+  if (!icon) {
+    const size = isSelected ? 20 : 15;
+    const borderWidth = isSelected ? 3 : 2;
+    icon = L.divIcon({
+      className: '',
+      html: `<div style="
+        width: ${size}px; height: ${size}px;
+        background: ${color};
+        border: ${borderWidth}px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+        ${isSelected ? 'outline: 3px solid #15803d;' : ''}
+      "></div>`,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      popupAnchor: [0, -size / 2],
+    });
+    iconCache.set(key, icon);
+  }
+  return icon;
 }
 
 function FlyToSelected({ selected, isNavigating }) {
@@ -181,7 +189,10 @@ export default function MapView({
   currentStopIndex = 0,
   deliveryStops = [],
 }) {
-  const ordersWithCoords = orders.filter((o) => o.latitude != null && o.longitude != null);
+  const ordersWithCoords = useMemo(
+    () => orders.filter((o) => o.latitude != null && o.longitude != null),
+    [orders]
+  );
 
   // Active courier location in Navigation mode (starts at depot, moves to last delivered stop)
   const courierPosition = useMemo(() => {
@@ -216,20 +227,22 @@ export default function MapView({
   }, [primaryRoute]);
 
   // Fallback whole-route polylines for standard overview mode
-  const overviewRouteLines = (routes?.routes || []).map((route, idx) => {
-    const hasGeometry = Array.isArray(route.geometry) && route.geometry.length > 1;
-    const positions = hasGeometry
-      ? route.geometry
-      : route.stops
-          .filter((s) => s.lat != null && s.lon != null)
-          .map((s) => [s.lat, s.lon]);
+  const overviewRouteLines = useMemo(() => {
+    return (routes?.routes || []).map((route, idx) => {
+      const hasGeometry = Array.isArray(route.geometry) && route.geometry.length > 1;
+      const positions = hasGeometry
+        ? route.geometry
+        : route.stops
+            .filter((s) => s.lat != null && s.lon != null)
+            .map((s) => [s.lat, s.lon]);
 
-    return {
-      positions,
-      color: ROUTE_COLORS[idx % ROUTE_COLORS.length],
-      vehicle: route.vehicle,
-    };
-  });
+      return {
+        positions,
+        color: ROUTE_COLORS[idx % ROUTE_COLORS.length],
+        vehicle: route.vehicle,
+      };
+    });
+  }, [routes]);
 
   return (
     <MapContainer
