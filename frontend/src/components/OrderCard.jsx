@@ -60,8 +60,8 @@ function OrderCard({
       }}
       className={`group relative flex flex-col justify-between w-full border-l-4 ${config.leftBorder} glass-card transition-all duration-300 apple-spring cursor-pointer select-text active:scale-[0.985] ${
         isSelected
-          ? 'ring-2 ring-black !bg-green-50/90 shadow-xl scale-[1.015]'
-          : 'hover:!bg-white/90 hover:scale-[1.01] hover:shadow-lg'
+          ? 'ring-2 ring-green-700 !bg-green-100/60 shadow-xl scale-[1.015]'
+          : 'hover:!bg-white/65 hover:scale-[1.01] hover:shadow-lg'
       }`}
     >
       <div>
@@ -130,7 +130,7 @@ function OrderCard({
 
       {/* Footer Info & Buttons */}
       <div
-        className="border-t border-zinc-100 flex items-center justify-between text-zinc-500"
+        className="border-t border-zinc-200/50 flex items-center justify-between text-zinc-500"
         style={{
           marginTop: `${Math.round(10 * scale)}px`,
           paddingTop: `${Math.round(8 * scale)}px`,

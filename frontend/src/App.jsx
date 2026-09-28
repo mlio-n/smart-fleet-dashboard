@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { fetchOrders, fetchStats, deleteOrder, clearAllOrders, regeocodeOrder, updateOrder } from './api';
 import StatsBar from './components/StatsBar';
 import OrderCard from './components/OrderCard';
@@ -35,6 +35,7 @@ export default function App() {
     return 380;
   });
   const [isResizing, setIsResizing] = useState(false);
+  const animationFrameRef = useRef(null);
 
   // Proportional scaling factor relative to default width (380px)
   const scale = useMemo(() => {
@@ -48,13 +49,22 @@ export default function App() {
 
   const stopResizing = useCallback(() => {
     setIsResizing(false);
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
   }, []);
 
   const resize = useCallback(
     (e) => {
       if (isResizing) {
-        const newWidth = Math.min(Math.max(e.clientX, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH);
-        setSidebarWidth(newWidth);
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        animationFrameRef.current = requestAnimationFrame(() => {
+          // Precise cursor tracking: subtract sidebar left offset (16px)
+          const newWidth = Math.min(Math.max(e.clientX - 16, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH);
+          setSidebarWidth(newWidth);
+        });
       }
     },
     [isResizing]
@@ -237,9 +247,9 @@ export default function App() {
         />
       </div>
 
-      {/* ── Top Floating Glass Island (iOS Style) ── */}
+      {/* ── Top-Right Floating Glass Island (Metrics & Filters) ── */}
       <div
-        className={`absolute top-3.5 inset-x-4 z-30 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
+        className={`absolute top-3.5 right-4 z-30 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
           isNavigating || showRoutePreview
             ? '-translate-y-32 opacity-0 pointer-events-none'
             : 'translate-y-0 opacity-100'
@@ -248,36 +258,91 @@ export default function App() {
         <StatsBar stats={stats} activeFilter={statusFilter} onFilter={setStatusFilter} />
       </div>
 
-      {/* ── Resizable Glassmorphic Sidebar Floating Over Map (iOS Island Sheet) ─── */}
+      {/* ── Resizable Glassmorphic Sidebar Floating Over Map (Unified Island) ─── */}
       <aside
         style={{
           width: `${sidebarWidth}px`,
-          top: '86px',
+          top: '14px',
           bottom: '14px',
           left: '16px',
         }}
-        className={`absolute z-20 flex flex-col glass-panel rounded-3xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden shadow-[0_20px_50px_-10px_rgba(0,0,0,0.18)] pointer-events-auto ${
+        className={`absolute z-20 flex flex-col glass-panel rounded-3xl overflow-hidden shadow-[0_20px_50px_-10px_rgba(0,0,0,0.18)] pointer-events-auto ${
+          isResizing ? 'transition-none select-none' : 'transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]'
+        } ${
           isNavigating || showRoutePreview ? '-translate-x-[120%] opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'
         }`}
       >
-        {/* Header */}
+        {/* Header: Unified Brand & Order Stream */}
         <div
           style={{ padding: `${paddingScaled}px` }}
           className="glass-panel-subtle !border-t-0 !border-x-0 !border-b rounded-t-3xl shadow-xs relative"
         >
           {/* Specular highlight */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />
-          <div className="flex items-center justify-between">
+
+          {/* Brand Logo & Name */}
+          <div className="flex items-center gap-3">
+            {/* Precision GIS Fleet Emblem */}
+            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-b from-zinc-900 via-zinc-950 to-black shadow-md border border-white/10 shrink-0 overflow-hidden">
+              <div className="absolute inset-0 bg-radial from-green-500/20 via-transparent to-transparent pointer-events-none" />
+              <svg
+                className="w-5 h-5 relative z-10"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <defs>
+                  <linearGradient id="emblemGreenGrad" x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#4ade80" />
+                    <stop offset="100%" stopColor="#15803d" />
+                  </linearGradient>
+                </defs>
+                {/* Orbit Waypoint Track */}
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="8.5"
+                  stroke="url(#emblemGreenGrad)"
+                  strokeWidth="1.6"
+                  strokeDasharray="3.5 2.5"
+                  strokeOpacity="0.6"
+                />
+                {/* Navigation Fleet Vector */}
+                <path
+                  d="M12 4.5L17.5 17.5L12 14.5L6.5 17.5L12 4.5Z"
+                  fill="url(#emblemGreenGrad)"
+                />
+                {/* Core Coordinate Node */}
+                <circle cx="12" cy="11.5" r="1.5" fill="#ffffff" />
+              </svg>
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-[16px] font-bold text-zinc-950 tracking-tight leading-none">
+                  Smart<span className="font-extrabold text-green-700">Fleet</span>
+                </h1>
+                <span className="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold tracking-wider uppercase bg-green-500/10 text-green-800 border border-green-600/20">
+                  GIS
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-500 font-medium tracking-tight mt-1 truncate">
+                Lojistik Operasyon & Rota Yönetimi
+              </p>
+            </div>
+          </div>
+
+          {/* Subheader: Order Stream & Actions */}
+          <div className="mt-3.5 pt-3 border-t border-zinc-200/60 flex items-center justify-between">
             <div>
               <h2
-                className="font-bold text-black"
+                className="font-black text-black"
                 style={{ fontSize: `${headerTitleSize}px` }}
               >
                 Sipariş Akışı
               </h2>
               <p
                 className="text-zinc-600 font-medium"
-                style={{ fontSize: `${headerSubtitleSize}px`, marginTop: `${Math.round(2 * scale)}px` }}
+                style={{ fontSize: `${headerSubtitleSize}px`, marginTop: `${Math.round(1 * scale)}px` }}
               >
                 {loading ? 'Yükleniyor...' : `${orders.length} sipariş gösteriliyor`}
                 {statusFilter && <span className="font-semibold text-green-700"> · {statusFilter}</span>}
@@ -289,8 +354,8 @@ export default function App() {
                 onClick={() => setIsNewOrderOpen(true)}
                 style={{
                   fontSize: `${newOrderBtnSize}px`,
-                  padding: `${Math.round(5 * scale)}px ${Math.round(10 * scale)}px`,
-                  borderRadius: `${Math.round(6 * scale)}px`,
+                  padding: `${Math.round(5 * scale)}px ${Math.round(9 * scale)}px`,
+                  borderRadius: `${Math.round(7 * scale)}px`,
                 }}
                 className="flex items-center gap-1 bg-green-700 hover:bg-green-800 font-bold text-white transition cursor-pointer shadow-xs active:scale-98"
               >
@@ -304,7 +369,7 @@ export default function App() {
                 style={{
                   fontSize: `${newOrderBtnSize}px`,
                   padding: `${Math.round(5 * scale)}px ${Math.round(8 * scale)}px`,
-                  borderRadius: `${Math.round(6 * scale)}px`,
+                  borderRadius: `${Math.round(7 * scale)}px`,
                 }}
                 className="flex items-center gap-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold transition cursor-pointer shadow-xs active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -389,19 +454,49 @@ export default function App() {
         />
       </aside>
 
-      {/* ── Resizer Drag Bar with Smooth Collapse ─────── */}
+      {/* ── Resizer Drag Bar (Clean Inset Pill - No Corner Overhang) ─────── */}
       <div
         onMouseDown={isNavigating || showRoutePreview ? undefined : startResizing}
         style={{
-          left: `${sidebarWidth + 20}px`,
-          top: '86px',
-          bottom: '14px',
+          left: `${sidebarWidth + 16}px`,
+          top: '46px',
+          bottom: '46px',
         }}
-        className={`absolute w-2 cursor-col-resize z-25 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-green-600/70 rounded-full flex items-center justify-center ${
-          isResizing ? 'bg-green-700/80 w-2.5' : 'bg-transparent'
+        className={`group absolute w-6 -ml-3 cursor-col-resize z-25 flex items-center justify-center ${
+          isResizing ? 'transition-none select-none' : 'transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]'
         } ${isNavigating || showRoutePreview ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-        title="Paneli genişletmek/daraltmak için sürükleyin"
-      />
+        title="Genişliği ayarlamak için sürükleyin"
+      >
+        {/* Straight Edge Guide (Safely stops before rounded corners) */}
+        <div
+          className={`w-[2.5px] h-full rounded-full transition-all duration-200 ${
+            isResizing
+              ? 'bg-green-600/80 shadow-[0_0_8px_rgba(22,163,74,0.4)]'
+              : 'bg-black/5 group-hover:bg-green-600/40'
+          }`}
+        />
+
+        {/* Substantial Tactile Grip Capsule */}
+        <div
+          className={`absolute top-1/2 -translate-y-1/2 rounded-full backdrop-blur-md shadow-md transition-all duration-200 flex items-center justify-center gap-0.5 cursor-col-resize ${
+            isResizing
+              ? 'h-24 w-3 bg-green-700 shadow-[0_0_20px_rgba(22,163,74,0.6)]'
+              : 'h-16 w-2 bg-white/95 border border-zinc-300/90 group-hover:h-20 group-hover:w-2.5 group-hover:bg-green-600 group-hover:border-transparent group-hover:shadow-[0_0_16px_rgba(22,163,74,0.45)]'
+          }`}
+        >
+          {/* Dual tactile vertical grip grooves */}
+          <span
+            className={`w-[1.5px] h-5 rounded-full transition-colors duration-150 ${
+              isResizing ? 'bg-white' : 'bg-zinc-400 group-hover:bg-white'
+            }`}
+          />
+          <span
+            className={`w-[1.5px] h-5 rounded-full transition-colors duration-150 ${
+              isResizing ? 'bg-white' : 'bg-zinc-400 group-hover:bg-white'
+            }`}
+          />
+        </div>
+      </div>
 
       {/* ── Floating Driver HUD (VisionOS / Dynamic Island Style) ─────────── */}
       <NavigationHUD
