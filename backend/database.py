@@ -5,11 +5,14 @@ Establishes the SQLAlchemy engine and session factory for the SQLite backend.
 All other modules import `SessionLocal` and `Base` from here.
 """
 
+from pathlib import Path
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from collections.abc import Generator
 
-# SQLite database file will be created in the project root.
-DATABASE_URL = "sqlite:///./smart_fleet.db"
+# SQLite database file resolved relative to backend directory
+DB_PATH = Path(__file__).resolve().parent / "smart_fleet.db"
+DATABASE_URL = f"sqlite:///{DB_PATH}"
 
 # `check_same_thread=False` is required for SQLite when used with FastAPI
 # because multiple threads may access the same connection during request handling.
@@ -38,9 +41,6 @@ SessionLocal = sessionmaker(
 class Base(DeclarativeBase):
     """Shared declarative base for all ORM models."""
     pass
-
-
-from collections.abc import Generator
 
 
 def get_db() -> Generator[Session, None, None]:

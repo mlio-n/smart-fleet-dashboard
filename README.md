@@ -56,31 +56,43 @@ An enterprise-grade logistics command center and fleet route optimization platfo
 
 ```
 smart-fleet-dashboard/
-|-- database.py              # SQLAlchemy engine, session factory, Base definition
-|-- main.py                  # FastAPI application entry point, lifecycle, endpoints
-|-- models.py                # SQLAlchemy ORM models (Order, OrderStatus enum)
-|-- schemas.py               # Pydantic v2 schemas (OrderCreate, OrderUpdate, OrderResponse, etc.)
-|-- routing.py               # Google OR-Tools CVRP solver implementation
-|-- utils.py                 # OSRM road matrix, Haversine fallback, turn-by-turn geometry
+|-- main.py                  # Root application entrypoint (forwards to backend)
 |-- requirements.txt         # Python runtime dependencies
 |-- start_all.bat            # Dual-service one-click launcher for Windows
+|-- backend/
+|   |-- main.py              # FastAPI application bootstrap, CORS, router registrations
+|   |-- database.py          # SQLAlchemy 2.0 engine, session factory, WAL mode
+|   |-- models.py            # SQLAlchemy ORM models (Order, OrderStatus enum)
+|   |-- schemas.py           # Pydantic v2 validation and response schemas
+|   |-- routing.py           # Google OR-Tools CVRP solver implementation
+|   |-- utils.py             # OSRM road matrix, Haversine fallback, turn-by-turn geometry
+|   |-- routers/
+|   |   |-- system.py        # Health check and aggregate order statistics endpoints
+|   |   |-- orders.py        # Ingestion, CRUD, re-geocoding, and anomaly resolution
+|   |   `-- routes.py        # CVRP route optimization solver endpoint
+|   `-- services/
+|       `-- geocoding.py     # Asynchronous Nominatim worker and address fallback parser
 `-- frontend/
     |-- index.html           # HTML shell
     |-- package.json         # Frontend package configuration and scripts
     |-- tailwind.config.js   # Tailwind CSS design system configuration
     |-- vite.config.js       # Vite development and bundle configuration
     `-- src/
-        |-- App.jsx          # Main application layout, state coordinator, and HUD logic
+        |-- App.jsx          # Main application layout and state coordinator
         |-- api.js           # Centralized Axios API communication client
+        |-- constants.js     # Shared frontend constants and color tokens
         |-- index.css        # Global CSS, scrollbar styling, glassmorphism utilities
         |-- main.jsx         # React application bootstrap
+        |-- utils/
+        |   `-- geo.js       # Haversine distance and geospatial utility helpers
         `-- components/
-            |-- MapView.jsx      # Leaflet map, depot pin, route polylines, navigation zoom
-            |-- NewOrderModal.jsx# Order creation modal with input validation
-            |-- OrderCard.jsx    # Individual order card with status badges and quick actions
-            |-- ResolveModal.jsx # Support agent anomaly coordinate override modal
-            |-- RoutePanel.jsx   # Fleet parameters form, solver trigger, and CSV export
-            `-- StatsBar.jsx     # Floating header metrics bar with click-to-filter cards
+            |-- MapView.jsx       # Leaflet map, depot pin, route polylines, navigation zoom
+            |-- NavigationHUD.jsx # Driver navigation HUD overlay and turn-by-turn cards
+            |-- NewOrderModal.jsx # Order creation modal with input validation
+            |-- OrderCard.jsx     # Individual order card with status badges and quick actions
+            |-- ResolveModal.jsx  # Support agent anomaly coordinate override modal
+            |-- RoutePanel.jsx    # Fleet parameters form, solver trigger, and CSV export
+            `-- StatsBar.jsx      # Floating header metrics bar with click-to-filter cards
 ```
 
 ---
