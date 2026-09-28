@@ -49,6 +49,6 @@ htmlcov/
 # MyPy
 .mypy_cache/
 
-# Local helper scripts (allow launcher scripts)
+# Local helper scripts (allow only start_all.bat)
 *.bat
-!start_*.bat
+!start_all.bat

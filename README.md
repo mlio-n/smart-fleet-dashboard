@@ -64,8 +64,6 @@ smart-fleet-dashboard/
 |-- utils.py                 # OSRM road matrix, Haversine fallback, turn-by-turn geometry
 |-- requirements.txt         # Python runtime dependencies
 |-- start_all.bat            # Dual-service one-click launcher for Windows
-|-- start_backend.bat        # Dedicated backend launcher
-|-- start_frontend.bat       # Dedicated frontend launcher
 `-- frontend/
     |-- index.html           # HTML shell
     |-- package.json         # Frontend package configuration and scripts
