@@ -258,7 +258,7 @@ export default function App() {
         <StatsBar stats={stats} activeFilter={statusFilter} onFilter={setStatusFilter} />
       </div>
 
-      {/* ── Resizable Glassmorphic Sidebar Floating Over Map (Unified Island) ─── */}
+      {/* ── Resizable Glassmorphic Sidebar Floating Over Map ─── */}
       <aside
         style={{
           width: `${sidebarWidth}px`,
@@ -272,19 +272,19 @@ export default function App() {
           isNavigating || showRoutePreview ? '-translate-x-[120%] opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'
         }`}
       >
-        {/* Header: Unified Brand & Order Stream */}
+        {/* Header: Clean Brand & Order Stream with Glassmorphism */}
         <div
           style={{ padding: `${paddingScaled}px` }}
-          className="glass-panel-subtle !border-t-0 !border-x-0 !border-b rounded-t-3xl shadow-xs relative"
+          className="glass-panel-subtle !border-t-0 !border-x-0 !border-b border-white/50 relative"
         >
-          {/* Specular highlight */}
+          {/* Specular top highlight */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />
 
           {/* Brand Logo & Name */}
           <div className="flex items-center gap-3">
             {/* Precision GIS Fleet Emblem */}
             <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-b from-zinc-900 via-zinc-950 to-black shadow-md border border-white/10 shrink-0 overflow-hidden">
-              <div className="absolute inset-0 bg-radial from-green-500/20 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-radial from-emerald-500/20 via-transparent to-transparent pointer-events-none" />
               <svg
                 className="w-5 h-5 relative z-10"
                 viewBox="0 0 24 24"
@@ -292,8 +292,8 @@ export default function App() {
               >
                 <defs>
                   <linearGradient id="emblemGreenGrad" x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#4ade80" />
-                    <stop offset="100%" stopColor="#15803d" />
+                    <stop stopColor="#34d399" />
+                    <stop offset="100%" stopColor="#059669" />
                   </linearGradient>
                 </defs>
                 {/* Orbit Waypoint Track */}
@@ -318,46 +318,46 @@ export default function App() {
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <h1 className="text-[16px] font-bold text-zinc-950 tracking-tight leading-none">
-                  Smart<span className="font-extrabold text-green-700">Fleet</span>
+                <h1 className="text-[16px] font-bold text-slate-900 tracking-tight leading-none">
+                  Smart<span className="font-extrabold text-emerald-700">Fleet</span>
                 </h1>
-                <span className="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold tracking-wider uppercase bg-green-500/10 text-green-800 border border-green-600/20">
+                <span className="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold tracking-wider uppercase bg-emerald-500/10 text-emerald-800 border border-emerald-600/20">
                   GIS
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-500 font-medium tracking-tight mt-1 truncate">
+              <p className="text-[11px] text-slate-500 font-medium tracking-tight mt-1 truncate">
                 Lojistik Operasyon & Rota Yönetimi
               </p>
             </div>
           </div>
 
           {/* Subheader: Order Stream & Actions */}
-          <div className="mt-3.5 pt-3 border-t border-zinc-200/60 flex items-center justify-between">
+          <div className="mt-4 pt-3.5 border-t border-slate-200/50 flex items-center justify-between">
             <div>
               <h2
-                className="font-black text-black"
+                className="font-semibold text-slate-800"
                 style={{ fontSize: `${headerTitleSize}px` }}
               >
                 Sipariş Akışı
               </h2>
               <p
-                className="text-zinc-600 font-medium"
+                className="text-slate-500 font-medium"
                 style={{ fontSize: `${headerSubtitleSize}px`, marginTop: `${Math.round(1 * scale)}px` }}
               >
                 {loading ? 'Yükleniyor...' : `${orders.length} sipariş gösteriliyor`}
-                {statusFilter && <span className="font-semibold text-green-700"> · {statusFilter}</span>}
+                {statusFilter && <span className="font-semibold text-emerald-700"> · {statusFilter}</span>}
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsNewOrderOpen(true)}
                 style={{
                   fontSize: `${newOrderBtnSize}px`,
-                  padding: `${Math.round(5 * scale)}px ${Math.round(9 * scale)}px`,
-                  borderRadius: `${Math.round(7 * scale)}px`,
+                  padding: `${Math.round(5 * scale)}px ${Math.round(10 * scale)}px`,
+                  borderRadius: `${Math.round(8 * scale)}px`,
                 }}
-                className="flex items-center gap-1 bg-green-700 hover:bg-green-800 font-bold text-white transition cursor-pointer shadow-xs active:scale-98"
+                className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm transition active:scale-98 cursor-pointer"
               >
                 <span>+</span> Yeni Sipariş
               </button>
@@ -369,9 +369,9 @@ export default function App() {
                 style={{
                   fontSize: `${newOrderBtnSize}px`,
                   padding: `${Math.round(5 * scale)}px ${Math.round(8 * scale)}px`,
-                  borderRadius: `${Math.round(7 * scale)}px`,
+                  borderRadius: `${Math.round(8 * scale)}px`,
                 }}
-                className="flex items-center gap-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold transition cursor-pointer shadow-xs active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-1 bg-white/80 hover:bg-rose-50 border border-slate-200/80 text-slate-600 hover:text-rose-600 font-medium transition cursor-pointer shadow-xs active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -382,45 +382,26 @@ export default function App() {
           </div>
         </div>
 
-        {/* Order list (Single-column expanding package cards) */}
+        {/* Order list: Spacious padding & dynamically scaled gap */}
         <div
           style={{
             padding: `${paddingScaled}px`,
-            gap: `${listGap}px`,
+            gap: `${Math.round(11 * scale)}px`,
           }}
           className="flex-1 overflow-y-auto flex flex-col"
         >
           {error && (
-            <div
-              style={{
-                fontSize: `${headerSubtitleSize}px`,
-                padding: `${Math.round(10 * scale)}px`,
-                borderRadius: `${Math.round(6 * scale)}px`,
-              }}
-              className="bg-red-50 border border-red-200 text-red-700 shadow-xs"
-            >
+            <div className="text-xs p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 shadow-xs font-medium">
               {error}
             </div>
           )}
 
           {!loading && !error && orders.length === 0 && (
-            <div
-              style={{
-                padding: `${Math.round(24 * scale)}px`,
-                borderRadius: `${Math.round(8 * scale)}px`,
-              }}
-              className="border border-gray-200 bg-white text-center my-4 shadow-sm"
-            >
-              <p
-                className="font-medium text-gray-700"
-                style={{ fontSize: `${headerTitleSize}px` }}
-              >
+            <div className="p-6 rounded-2xl border border-slate-200/70 bg-white text-center my-4 shadow-sm">
+              <p className="font-semibold text-slate-700 text-sm">
                 Sipariş bulunamadı.
               </p>
-              <p
-                className="text-gray-400"
-                style={{ fontSize: `${headerSubtitleSize}px`, marginTop: `${Math.round(4 * scale)}px` }}
-              >
+              <p className="text-slate-400 text-xs mt-1">
                 Yeni bir sipariş ekleyebilirsiniz.
               </p>
             </div>

@@ -131,132 +131,148 @@ export default function NewOrderModal({ onClose, onCreated }) {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/10 backdrop-blur-[2px] animate-in fade-in duration-200"
       onClick={onClose}
     >
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
-        className="w-full max-w-xl rounded-3xl glass-panel p-7 animate-in fade-in zoom-in-95 duration-200 relative overflow-hidden"
+        className="w-full max-w-lg rounded-3xl glass-panel p-6 animate-in fade-in zoom-in-95 duration-300 relative overflow-hidden shadow-[0_25px_70px_-15px_rgba(0,0,0,0.25)]"
       >
-        {/* Specular highlight border effect at top */}
-        <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />
+        {/* Glass specular top reflection highlight */}
+        <div className="absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none" />
 
-        <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-200/60">
-          <div>
-            <h3 className="text-lg font-black text-black">Yeni Sipariş Ekle</h3>
-            <p className="text-xs text-zinc-500 font-semibold mt-0.5">
-              Hızlı rastgele sipariş ekleyebilir veya özel adres girebilirsiniz.
-            </p>
+        {/* Top Status & Close Header (Exact NavigationHUD Style) */}
+        <div className="flex items-center justify-between border-b border-slate-200/50 pb-3 mb-3.5">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2.5 w-2.5 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
+            </span>
+            <span className="bg-emerald-50 text-emerald-800 border border-emerald-200/60 rounded-full px-3 py-1 text-xs font-medium">
+              Sipariş Girişi · Yeni Kayıt
+            </span>
           </div>
+
           <button
             type="button"
             onClick={onClose}
-            className="text-zinc-400 hover:text-black text-xl font-bold cursor-pointer transition p-1 hover:bg-zinc-100/80 rounded-lg"
+            className="text-xs font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg hover:bg-white/60 transition cursor-pointer"
           >
-            ✕
+            ✕ Kapat
           </button>
         </div>
 
+        {/* Mini Info Banner */}
+        <div className="relative flex items-center justify-between text-xs font-medium text-slate-700 glass-card rounded-xl px-4 py-2 mb-3.5 border border-white/60">
+          <span className="flex items-center gap-1.5 text-emerald-800 font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block"></span>
+            Akıllı Adres Çözümleme
+          </span>
+          <span className="text-[11px] text-slate-400 font-normal">
+            Otomatik Koordinat & Anomali Kontrolü
+          </span>
+        </div>
+
         {/* 2 Quick Automatic Order Creation Buttons */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-2 gap-2.5 mb-3.5">
           <button
             type="button"
             disabled={loading}
             onClick={handleAutoCreateReal}
-            className="py-2.5 px-4 rounded-xl border border-green-500/70 bg-green-50/80 hover:bg-green-100/90 disabled:opacity-50 text-green-950 text-xs font-black transition cursor-pointer text-center shadow-xs active:scale-98 backdrop-blur-xs"
+            className="py-2.5 px-3.5 rounded-xl border border-emerald-200/60 glass-card hover:!bg-emerald-50/70 disabled:opacity-50 text-emerald-900 text-xs font-semibold transition active:scale-98 flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
           >
-            {loading ? 'Oluşturuluyor...' : '+ Gerçek Sipariş Oluştur'}
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            + Hızlı Gerçek Sipariş
           </button>
           <button
             type="button"
             disabled={loading}
             onClick={handleAutoCreateAnomaly}
-            className="py-2.5 px-4 rounded-xl border border-rose-400/70 bg-rose-50/80 hover:bg-rose-100/90 disabled:opacity-50 text-rose-950 text-xs font-black transition cursor-pointer text-center shadow-xs active:scale-98 backdrop-blur-xs"
+            className="py-2.5 px-3.5 rounded-xl border border-rose-200/60 glass-card hover:!bg-rose-50/70 disabled:opacity-50 text-rose-900 text-xs font-semibold transition active:scale-98 flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
           >
-            {loading ? 'Oluşturuluyor...' : '+ Anomali Sipariş Oluştur'}
+            <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+            + Anomali Sipariş Ekle
           </button>
         </div>
 
-        {/* Fixed-Height Feedback Slot (Prevents layout shift & button jump) */}
-        <div className="h-12 mb-4 flex items-center">
+        {/* Fixed-Height Feedback Slot */}
+        <div className="h-10 mb-3.5 flex items-center">
           {error ? (
-            <div className="w-full h-full flex items-center px-3.5 rounded-xl text-xs font-bold border border-red-200 bg-red-50/90 backdrop-blur-xs text-red-700 truncate animate-in fade-in duration-150">
+            <div className="w-full h-full flex items-center px-3.5 rounded-xl text-xs font-medium border border-rose-200 bg-rose-50/80 text-rose-700 truncate animate-in fade-in duration-150">
               <span className="truncate">{error}</span>
             </div>
           ) : notification ? (
             <div
-              className={`w-full h-full flex items-center px-3.5 rounded-xl text-xs font-bold border transition-all duration-200 truncate animate-in fade-in duration-150 backdrop-blur-xs ${
+              className={`w-full h-full flex items-center px-3.5 rounded-xl text-xs font-medium border transition-all duration-200 truncate animate-in fade-in duration-150 ${
                 notification.type === 'success'
-                  ? 'bg-green-100/90 border-green-300/80 text-green-900'
-                  : 'bg-amber-100/90 border-amber-300/80 text-amber-900'
+                  ? 'bg-emerald-50/80 border-emerald-300/80 text-emerald-800'
+                  : 'bg-amber-50/80 border-amber-300/80 text-amber-800'
               }`}
             >
               <span className="truncate">{notification.text}</span>
             </div>
           ) : (
-            <div className="w-full h-full flex items-center px-3.5 rounded-xl text-xs font-medium text-zinc-500 border border-dashed border-zinc-300/80 bg-white/40 backdrop-blur-xs">
-              <span>Hızlı sipariş eklemek için yukarıdaki butonları kullanabilirsiniz.</span>
+            <div className="w-full h-full flex items-center px-3.5 rounded-xl text-[11px] font-normal text-slate-400 border border-dashed border-slate-200/70 glass-card">
+              <span>Rastgele örnek veri için yukarıdaki hızlı butonları kullanabilirsiniz.</span>
             </div>
           )}
         </div>
 
-        <label className="block mb-3.5">
-          <span className="text-xs font-black text-black">Müşteri Adı Soyadı</span>
-          <input
-            type="text"
-            required
-            value={form.customer_name}
-            onChange={set('customer_name')}
-            placeholder="Örn: Ahmet Yılmaz"
-            className="mt-1.5 block w-full rounded-xl border border-zinc-200/90 bg-white/80 backdrop-blur-xs px-3.5 py-2.5 text-sm text-black focus:border-green-600 focus:bg-white focus:ring-1 focus:ring-green-600 outline-none shadow-xs transition"
-          />
-        </label>
+        {/* Manual Inputs Section (Glass Card Enclosure) */}
+        <div className="glass-card rounded-2xl p-4 border border-white/60 mb-4 space-y-3">
+          <div>
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
+              Müşteri Adı Soyadı
+            </label>
+            <input
+              type="text"
+              required
+              value={form.customer_name}
+              onChange={set('customer_name')}
+              placeholder="Örn: Ahmet Yılmaz"
+              className="w-full rounded-xl border border-slate-200/60 bg-white/70 px-3.5 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 outline-none shadow-2xs transition"
+            />
+          </div>
 
-        <label className="block mb-3.5">
-          <span className="text-xs font-black text-black">Teslimat Adresi</span>
-          <textarea
-            rows={3}
-            required
-            value={form.raw_address}
-            onChange={set('raw_address')}
-            placeholder="Örn: Çamlaraltı Mahallesi, Çamlık Caddesi Pamukkale Denizli"
-            className="mt-1.5 block w-full rounded-xl border border-zinc-200/90 bg-white/80 backdrop-blur-xs px-3.5 py-2.5 text-sm text-black focus:border-green-600 focus:bg-white focus:ring-1 focus:ring-green-600 outline-none shadow-xs transition"
-          />
-          <span className="text-[11px] text-zinc-500 mt-1 block font-medium">
-            Adres arka planda Nominatim ile coğrafi koordinatlara dönüştürülecektir.
-          </span>
-        </label>
+          <div>
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
+              Teslimat Adresi
+            </label>
+            <textarea
+              rows={2}
+              required
+              value={form.raw_address}
+              onChange={set('raw_address')}
+              placeholder="Örn: Çamlaraltı Mahallesi, Çamlık Caddesi Pamukkale Denizli"
+              className="w-full rounded-xl border border-slate-200/60 bg-white/70 px-3.5 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 outline-none shadow-2xs transition resize-none"
+            />
+          </div>
 
-        <label className="block mb-5">
-          <span className="text-xs font-black text-black">Paket Ağırlığı (kg)</span>
-          <input
-            type="number"
-            step="0.1"
-            min="0.1"
-            required
-            value={form.weight}
-            onChange={set('weight')}
-            className="mt-1.5 block w-full rounded-xl border border-zinc-200/90 bg-white/80 backdrop-blur-xs px-3.5 py-2.5 text-sm text-black focus:border-green-600 focus:bg-white focus:ring-1 focus:ring-green-600 outline-none shadow-xs transition"
-          />
-        </label>
-
-        <div className="flex justify-end gap-3 pt-3 border-t border-zinc-200/60">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl border border-zinc-200 bg-white/70 backdrop-blur-xs px-5 py-2 text-xs font-bold text-zinc-700 hover:bg-white transition cursor-pointer shadow-xs"
-          >
-            Kapat
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-xl bg-green-700 px-5 py-2 text-xs font-black text-white hover:bg-green-800 disabled:opacity-50 transition cursor-pointer shadow-xs active:scale-98"
-          >
-            {loading ? 'Kaydediliyor...' : 'Manuel Siparişi Kaydet'}
-          </button>
+          <div>
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
+              Paket Ağırlığı (kg)
+            </label>
+            <input
+              type="number"
+              step="0.1"
+              min="0.1"
+              required
+              value={form.weight}
+              onChange={set('weight')}
+              className="w-full rounded-xl border border-slate-200/60 bg-white/70 px-3.5 py-2 text-sm text-slate-800 focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 outline-none shadow-2xs transition"
+            />
+          </div>
         </div>
+
+        {/* Action Button (Exact NavigationHUD Style) */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3.5 text-sm shadow-sm transition active:scale-98 cursor-pointer flex items-center justify-center gap-2"
+        >
+          <span>{loading ? 'Kaydediliyor...' : 'Siparişi Sisteme Ekle'}</span>
+        </button>
       </form>
     </div>
   );

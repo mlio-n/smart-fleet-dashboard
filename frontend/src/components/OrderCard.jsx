@@ -3,28 +3,23 @@ import { memo } from 'react';
 const STATUS_CONFIG = {
   PENDING: {
     label: 'Beklemede',
-    badge: 'bg-zinc-100/80 backdrop-blur-xs text-zinc-800 border-zinc-300',
-    leftBorder: 'border-l-black',
+    badge: 'bg-slate-100 text-slate-700 border border-slate-200/60 rounded-full px-2.5 py-0.5 text-xs font-medium',
   },
   ANOMALY: {
     label: 'Anomali',
-    badge: 'bg-rose-50/90 backdrop-blur-xs text-rose-800 border-rose-200 font-bold',
-    leftBorder: 'border-l-rose-600',
+    badge: 'bg-rose-50 text-rose-700 border border-rose-200/50 rounded-full px-2.5 py-0.5 text-xs font-medium',
   },
   RESOLVED_MANUALLY: {
     label: 'Düzeltildi',
-    badge: 'bg-amber-50/90 backdrop-blur-xs text-amber-800 border-amber-200',
-    leftBorder: 'border-l-amber-500',
+    badge: 'bg-amber-50 text-amber-700 border border-amber-200/50 rounded-full px-2.5 py-0.5 text-xs font-medium',
   },
   ROUTED: {
     label: 'Rotalandı',
-    badge: 'bg-green-50/90 backdrop-blur-xs text-green-800 border-green-200 font-bold',
-    leftBorder: 'border-l-green-600',
+    badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200/50 rounded-full px-2.5 py-0.5 text-xs font-medium',
   },
   DELIVERED: {
     label: 'Teslim Edildi',
-    badge: 'bg-green-100/90 backdrop-blur-xs text-green-900 border-green-300 font-black',
-    leftBorder: 'border-l-green-700',
+    badge: 'bg-emerald-100 text-emerald-800 border border-emerald-300/50 rounded-full px-2.5 py-0.5 text-xs font-medium',
   },
 };
 
@@ -40,47 +35,40 @@ function OrderCard({
   const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING;
 
   // Proportional sizing based on sidebar scale factor
-  const pad = Math.round(15 * scale);
-  const radius = Math.round(10 * scale);
-  const gap = Math.round(8 * scale);
-
   const titleSize = Math.round(15 * scale);
-  const addressSize = Math.round(12.5 * scale);
-  const metaSize = Math.round(11.5 * scale);
-  const badgeSize = Math.round(11 * scale);
-  const buttonSize = Math.round(11.5 * scale);
+  const addressSize = Math.round(12 * scale);
+  const metaSize = Math.round(11 * scale);
+  const badgeSize = Math.round(10.5 * scale);
+  const pad = Math.round(15 * scale);
 
   return (
     <div
       onClick={() => onSelect?.(order)}
       style={{
         padding: `${pad}px`,
-        borderRadius: `${radius}px`,
-        gap: `${gap}px`,
       }}
-      className={`group relative flex flex-col justify-between w-full border-l-4 ${config.leftBorder} glass-card transition-all duration-300 apple-spring cursor-pointer select-text active:scale-[0.985] ${
+      className={`group relative flex flex-col justify-between w-full rounded-2xl glass-card border border-white/60 transition-all duration-200 cursor-pointer select-text ${
         isSelected
-          ? 'ring-2 ring-green-700 !bg-green-100/60 shadow-xl scale-[1.015]'
-          : 'hover:!bg-white/65 hover:scale-[1.01] hover:shadow-lg'
+          ? 'ring-2 ring-emerald-600 !bg-emerald-50/70 shadow-md scale-[1.01]'
+          : 'shadow-sm hover:shadow-md hover:!bg-white/70 hover:scale-[1.008]'
       }`}
     >
       <div>
         {/* Top Header: ID & Status Badge */}
-        <div className="flex items-center justify-between" style={{ marginBottom: `${Math.round(6 * scale)}px` }}>
+        <div className="flex items-center justify-between mb-2">
           <span
-            className="font-black text-zinc-500"
-            style={{ fontSize: `${badgeSize}px` }}
+            className="font-medium text-slate-400"
+            style={{ fontSize: `${metaSize}px` }}
           >
             #{order.id}
           </span>
 
-          <div className="flex items-center" style={{ gap: `${Math.round(6 * scale)}px` }}>
+          <div className="flex items-center gap-1.5">
             <span
-              className={`border font-semibold ${config.badge}`}
+              className={config.badge}
               style={{
                 fontSize: `${badgeSize}px`,
-                padding: `${Math.round(2.5 * scale)}px ${Math.round(8 * scale)}px`,
-                borderRadius: `${Math.round(6 * scale)}px`,
+                padding: `${Math.round(2 * scale)}px ${Math.round(8 * scale)}px`,
               }}
             >
               {config.label}
@@ -92,37 +80,27 @@ function OrderCard({
                 e.stopPropagation();
                 onDelete?.(order.id);
               }}
-              style={{
-                padding: `${Math.round(2 * scale)}px`,
-              }}
-              className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-600 rounded hover:bg-red-50 transition cursor-pointer"
+              className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-600 rounded-md hover:bg-rose-50 transition cursor-pointer"
             >
-              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
             </button>
           </div>
         </div>
 
-        {/* Customer Name */}
+        {/* Customer Name (Proportionally scales with sidebar width) */}
         <h3
-          className="font-black text-black tracking-tight"
-          style={{
-            fontSize: `${titleSize}px`,
-            lineHeight: 1.3,
-            marginBottom: `${Math.round(4 * scale)}px`,
-          }}
+          className="font-semibold text-slate-800 leading-snug tracking-tight"
+          style={{ fontSize: `${titleSize}px` }}
         >
           {order.customer_name}
         </h3>
 
         {/* Address */}
         <p
-          className="text-zinc-600 break-words font-normal"
-          style={{
-            fontSize: `${addressSize}px`,
-            lineHeight: 1.45,
-          }}
+          className="text-slate-500 line-clamp-2 mt-1 leading-relaxed break-words"
+          style={{ fontSize: `${addressSize}px` }}
         >
           {order.raw_address}
         </p>
@@ -130,25 +108,25 @@ function OrderCard({
 
       {/* Footer Info & Buttons */}
       <div
-        className="border-t border-zinc-200/50 flex items-center justify-between text-zinc-500"
+        className="border-t border-slate-200/50 flex items-center justify-between text-slate-500"
         style={{
           marginTop: `${Math.round(10 * scale)}px`,
           paddingTop: `${Math.round(8 * scale)}px`,
           fontSize: `${metaSize}px`,
         }}
       >
-        <div className="flex items-center" style={{ gap: `${Math.round(6 * scale)}px` }}>
+        <div className="flex items-center gap-1.5 font-medium">
           <span>
-            Rank: <strong className="text-zinc-800 font-bold">{order.place_rank ?? '—'}</strong>
+            Rank: <strong className="text-slate-700 font-semibold">{order.place_rank ?? '—'}</strong>
           </span>
           <span>•</span>
           <span>
-            <strong className="text-zinc-800 font-bold">{order.weight}</strong> kg
+            <strong className="text-slate-700 font-semibold">{order.weight}</strong> kg
           </span>
         </div>
 
         {order.status === 'ANOMALY' && (
-          <div className="flex items-center" style={{ gap: `${Math.round(6 * scale)}px` }}>
+          <div className="flex items-center gap-1.5">
             <button
               title="Yeniden tara"
               onClick={(e) => {
@@ -156,11 +134,10 @@ function OrderCard({
                 onRetry?.(order.id);
               }}
               style={{
-                fontSize: `${buttonSize}px`,
-                padding: `${Math.round(3.5 * scale)}px ${Math.round(8 * scale)}px`,
-                borderRadius: `${Math.round(6 * scale)}px`,
+                fontSize: `${metaSize}px`,
+                padding: `${Math.round(2.5 * scale)}px ${Math.round(8 * scale)}px`,
               }}
-              className="bg-zinc-100 hover:bg-zinc-200 text-black border border-zinc-300 font-bold transition cursor-pointer"
+              className="font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 transition cursor-pointer"
             >
               Yeniden Tara
             </button>
@@ -171,11 +148,10 @@ function OrderCard({
                 onResolve?.(order);
               }}
               style={{
-                fontSize: `${buttonSize}px`,
-                padding: `${Math.round(3.5 * scale)}px ${Math.round(10 * scale)}px`,
-                borderRadius: `${Math.round(6 * scale)}px`,
+                fontSize: `${metaSize}px`,
+                padding: `${Math.round(2.5 * scale)}px ${Math.round(10 * scale)}px`,
               }}
-              className="bg-green-700 hover:bg-green-800 text-white font-bold transition cursor-pointer shadow-xs"
+              className="font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition cursor-pointer shadow-xs"
             >
               Çöz
             </button>

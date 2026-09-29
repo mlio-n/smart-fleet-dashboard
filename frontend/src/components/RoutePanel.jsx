@@ -42,19 +42,11 @@ export default function RoutePanel({ routes, onRoutesGenerated, onStartJourney, 
     : Math.round(((result?.total_distance_m || 0) / 1000) * 2.2);
 
   return (
-    <div
-      style={{ padding: `${pad}px` }}
-      className="sticky bottom-0 glass-panel-subtle !border-b-0 !border-x-0 !border-t rounded-b-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.04)] z-10"
-    >
+    <div className="sticky bottom-0 bg-slate-50/95 backdrop-blur-md border-t border-slate-200/80 rounded-b-3xl p-4 shadow-xs z-10">
       <button
         onClick={handleGenerate}
         disabled={loading}
-        style={{
-          fontSize: `${buttonSize}px`,
-          padding: `${Math.round(9 * scale)}px ${Math.round(14 * scale)}px`,
-          borderRadius: `${Math.round(10 * scale)}px`,
-        }}
-        className="w-full bg-gradient-to-r from-green-700 to-green-800 hover:from-green-600 hover:to-green-700 font-extrabold text-white disabled:opacity-50 transition-all duration-200 apple-spring cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-green-900/20 active:scale-[0.98]"
+        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-medium py-3 rounded-xl shadow-sm transition active:scale-98 text-sm flex items-center justify-center gap-2 cursor-pointer"
       >
         {loading ? (
           <span>Rotalar Hesaplanıyor...</span>
@@ -64,42 +56,25 @@ export default function RoutePanel({ routes, onRoutesGenerated, onStartJourney, 
       </button>
 
       {error && (
-        <div
-          style={{
-            marginTop: `${Math.round(8 * scale)}px`,
-            padding: `${Math.round(6 * scale)}px`,
-            fontSize: `${labelSize}px`,
-          }}
-          className="rounded-lg bg-red-50/90 border border-red-200 text-red-700 font-medium"
-        >
+        <div className="mt-2.5 p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
           {error}
         </div>
       )}
 
       {result && (
-        <div
-          style={{
-            marginTop: `${Math.round(10 * scale)}px`,
-            padding: `${Math.round(10 * scale)}px`,
-            fontSize: `${labelSize}px`,
-          }}
-          className="rounded-2xl glass-panel-subtle !border-green-300/80 text-green-950 shadow-xs"
-        >
-          <div className="flex items-center justify-between font-black text-black">
+        <div className="mt-3 p-3.5 rounded-xl bg-white border border-emerald-200/80 text-slate-800 shadow-xs">
+          <div className="flex items-center justify-between font-semibold text-slate-900 text-xs">
             <span>Dağıtım Rotası Hazır</span>
-            <span className="text-green-800">{(result.total_distance_m / 1000).toFixed(1)} km</span>
+            <span className="text-emerald-700 font-bold">{(result.total_distance_m / 1000).toFixed(1)} km</span>
           </div>
 
-          <div
-            style={{ marginTop: `${Math.round(4 * scale)}px` }}
-            className="flex items-center justify-between text-xs text-green-900 font-semibold"
-          >
+          <div className="mt-1 flex items-center justify-between text-xs text-slate-500 font-medium">
             <span>Ortalama Sürüş Süresi:</span>
-            <span className="font-black text-black">~{estimatedMins} dakika</span>
+            <span className="font-semibold text-slate-700">~{estimatedMins} dakika</span>
           </div>
 
           {result.unassigned_orders.length > 0 && (
-            <p className="text-red-700 font-bold" style={{ marginTop: `${Math.round(6 * scale)}px` }}>
+            <p className="text-rose-600 font-medium text-xs mt-1.5">
               {result.unassigned_orders.length} sipariş atanamadı (uzak/geçersiz konum).
             </p>
           )}
@@ -112,12 +87,7 @@ export default function RoutePanel({ routes, onRoutesGenerated, onStartJourney, 
                 onStartJourney?.(result);
               }
             }}
-            style={{
-              marginTop: `${Math.round(8 * scale)}px`,
-              padding: `${Math.round(9 * scale)}px`,
-              fontSize: `${buttonSize}px`,
-            }}
-            className="w-full rounded-lg bg-black hover:bg-zinc-900 text-green-400 border border-green-600 font-black transition cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+            className="w-full mt-2.5 rounded-xl bg-slate-900 hover:bg-black text-emerald-400 font-medium py-2.5 text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
           >
             Yolculuk Kartını Aç
           </button>
