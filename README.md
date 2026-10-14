@@ -48,7 +48,6 @@ An enterprise-grade logistics command center and fleet route optimization platfo
 - Resizable Glassmorphic Sidebar: Operators can drag the sidebar border to expand or contract the order list between 250px and 850px, with typography and UI elements scaling proportionally.
 - Driver Navigation HUD: When routes are generated and navigation begins, the sidebar transitions off-screen and an active driving HUD panel appears at the bottom. The HUD displays current stop index, target customer details, exact road distance, estimated arrival time, and a single-click action to mark orders as DELIVERED and advance to the next delivery waypoint.
 - Route Visualizer: Highlights the active travel leg in blue while fading completed legs and displaying dedicated depot markers.
-- CSV Schedule Export: Generates downloadable CSV manifests containing stop sequences, vehicle IDs, customer names, addresses, coordinates, and package weights.
 
 ---
 
@@ -91,7 +90,7 @@ smart-fleet-dashboard/
             |-- NewOrderModal.jsx # Order creation modal with input validation
             |-- OrderCard.jsx     # Individual order card with status badges and quick actions
             |-- ResolveModal.jsx  # Support agent anomaly coordinate override modal
-            |-- RoutePanel.jsx    # Fleet parameters form, solver trigger, and CSV export
+            |-- RoutePanel.jsx    # Fleet parameters form and solver trigger
             `-- StatsBar.jsx      # Floating header metrics bar with click-to-filter cards
 ```
 

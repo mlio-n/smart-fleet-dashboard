@@ -1,16 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { generateRoutes } from '../api';
 
-export default function RoutePanel({ routes, onRoutesGenerated, onStartJourney, onOpenPreview, scale = 1 }) {
+export default function RoutePanel({ routes, onRoutesGenerated, onStartJourney, onOpenPreview }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [result, setResult] = useState(null);
-
-  useEffect(() => {
-    if (!routes) {
-      setResult(null);
-    }
-  }, [routes]);
 
   const FIXED_VEHICLES = 1;
   const FIXED_CAPACITY = 1000;
@@ -23,7 +16,6 @@ export default function RoutePanel({ routes, onRoutesGenerated, onStartJourney, 
         num_vehicles: FIXED_VEHICLES,
         vehicle_capacity: FIXED_CAPACITY,
       });
-      setResult(data);
       onRoutesGenerated?.(data);
     } catch (err) {
       setError(err.response?.data?.detail || 'Rota optimizasyonu başarısız oldu.');
@@ -32,14 +24,10 @@ export default function RoutePanel({ routes, onRoutesGenerated, onStartJourney, 
     }
   };
 
-  const buttonSize = Math.round(13 * scale);
-  const pad = Math.round(14 * scale);
-  const labelSize = Math.round(11 * scale);
-
-  const routeDuration = result?.routes?.[0]?.duration_minutes;
+  const routeDuration = routes?.routes?.[0]?.duration_minutes;
   const estimatedMins = routeDuration
     ? Math.round(routeDuration)
-    : Math.round(((result?.total_distance_m || 0) / 1000) * 2.2);
+    : Math.round(((routes?.total_distance_m || 0) / 1000) * 2.2);
 
   return (
     <div className="sticky bottom-0 bg-slate-50/95 backdrop-blur-md border-t border-slate-200/80 rounded-b-3xl p-4 shadow-xs z-10">
@@ -61,11 +49,11 @@ export default function RoutePanel({ routes, onRoutesGenerated, onStartJourney, 
         </div>
       )}
 
-      {result && (
+      {routes && (
         <div className="mt-3 p-3.5 rounded-xl bg-white border border-emerald-200/80 text-slate-800 shadow-xs">
           <div className="flex items-center justify-between font-semibold text-slate-900 text-xs">
             <span>Dağıtım Rotası Hazır</span>
-            <span className="text-emerald-700 font-bold">{(result.total_distance_m / 1000).toFixed(1)} km</span>
+            <span className="text-emerald-700 font-bold">{(routes.total_distance_m / 1000).toFixed(1)} km</span>
           </div>
 
           <div className="mt-1 flex items-center justify-between text-xs text-slate-500 font-medium">
@@ -73,9 +61,9 @@ export default function RoutePanel({ routes, onRoutesGenerated, onStartJourney, 
             <span className="font-semibold text-slate-700">~{estimatedMins} dakika</span>
           </div>
 
-          {result.unassigned_orders.length > 0 && (
+          {routes.unassigned_orders?.length > 0 && (
             <p className="text-rose-600 font-medium text-xs mt-1.5">
-              {result.unassigned_orders.length} sipariş atanamadı (uzak/geçersiz konum).
+              {routes.unassigned_orders.length} sipariş atanamadı (uzak/geçersiz konum).
             </p>
           )}
 
@@ -84,7 +72,7 @@ export default function RoutePanel({ routes, onRoutesGenerated, onStartJourney, 
               if (onOpenPreview) {
                 onOpenPreview();
               } else {
-                onStartJourney?.(result);
+                onStartJourney?.(routes);
               }
             }}
             className="w-full mt-2.5 rounded-xl bg-slate-900 hover:bg-black text-emerald-400 font-medium py-2.5 text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5"

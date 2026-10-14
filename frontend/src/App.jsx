@@ -102,8 +102,13 @@ export default function App() {
     }
   }, [statusFilter]);
 
-  useEffect(() => {
+  const handleFilterChange = useCallback((newFilter) => {
     setLoading(true);
+    setStatusFilter(newFilter);
+  }, []);
+
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect
     refresh();
   }, [refresh]);
 
@@ -136,6 +141,7 @@ export default function App() {
       setShowRoutePreview(false);
       refresh();
     } catch (err) {
+      console.error('Clear all orders failed:', err);
       alert('Siparişler temizlenirken hata oluştu.');
     }
   }, [refresh]);
@@ -225,7 +231,6 @@ export default function App() {
   const headerSubtitleSize = Math.round(11.5 * scale);
   const newOrderBtnSize = Math.round(12 * scale);
   const paddingScaled = Math.round(12 * scale);
-  const listGap = Math.round(10 * scale);
 
   // ─── Render ──────────────────────────────────────────────────────
   return (
@@ -255,7 +260,7 @@ export default function App() {
             : 'translate-y-0 opacity-100'
         }`}
       >
-        <StatsBar stats={stats} activeFilter={statusFilter} onFilter={setStatusFilter} />
+        <StatsBar stats={stats} activeFilter={statusFilter} onFilter={handleFilterChange} />
       </div>
 
       {/* ── Resizable Glassmorphic Sidebar Floating Over Map ─── */}
@@ -424,7 +429,6 @@ export default function App() {
         {/* Route generation panel with Start Journey trigger */}
         <RoutePanel
           routes={routes}
-          scale={scale}
           onRoutesGenerated={(data) => {
             setRoutes(data);
             setShowRoutePreview(true);
