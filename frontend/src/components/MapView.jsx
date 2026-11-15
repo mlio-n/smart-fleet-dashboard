@@ -1,7 +1,8 @@
-import { useEffect, useMemo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import { DEPOT_COORDS, DEFAULT_MAP_ZOOM, STATUS_COLORS, ROUTE_COLORS } from '../constants';
 
 // Fix default marker icons for Vite
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -14,19 +15,6 @@ L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
   shadowUrl: markerShadow,
 });
-
-const MAP_CENTER = [37.7765, 29.0864];
-const MAP_ZOOM = 13;
-
-const STATUS_COLORS = {
-  PENDING: '#3b82f6',
-  ANOMALY: '#ef4444',
-  RESOLVED_MANUALLY: '#f59e0b',
-  ROUTED: '#15803d',
-  DELIVERED: '#6b7280',
-};
-
-const ROUTE_COLORS = ['#15803d', '#18181b', '#047857', '#27272a', '#166534', '#3f3f46'];
 
 // Custom depot icon (Denizlispor Green & Black)
 const DEPOT_ICON = L.divIcon({
@@ -159,7 +147,7 @@ function CenterPreviewZoom({ showRoutePreview }) {
   const map = useMap();
   useEffect(() => {
     if (showRoutePreview) {
-      map.flyTo(MAP_CENTER, 15, { duration: 1.1 });
+      map.flyTo(DEPOT_COORDS, 15, { duration: 1.1 });
     }
   }, [showRoutePreview, map]);
   return null;
@@ -192,7 +180,7 @@ function AutoResizeMap({ isNavigating, showRoutePreview }) {
   return null;
 }
 
-export default function MapView({
+function MapView({
   orders,
   selectedOrder,
   routes,
@@ -210,13 +198,13 @@ export default function MapView({
   const courierPosition = useMemo(() => {
     if (!isNavigating) return null;
     if (currentStopIndex === 0 || !deliveryStops || deliveryStops.length === 0) {
-      return MAP_CENTER;
+      return DEPOT_COORDS;
     }
     const prev = deliveryStops[currentStopIndex - 1];
     if (prev && prev.lat != null && prev.lon != null) {
       return [prev.lat, prev.lon];
     }
-    return MAP_CENTER;
+    return DEPOT_COORDS;
   }, [isNavigating, currentStopIndex, deliveryStops]);
 
   // Extract turn-by-turn road legs for the primary vehicle route
@@ -258,8 +246,8 @@ export default function MapView({
 
   return (
     <MapContainer
-      center={MAP_CENTER}
-      zoom={MAP_ZOOM}
+      center={DEPOT_COORDS}
+      zoom={DEFAULT_MAP_ZOOM}
       zoomControl={false}
       style={{ height: '100%', width: '100%' }}
     >
@@ -276,7 +264,7 @@ export default function MapView({
       <AutoResizeMap isNavigating={isNavigating} showRoutePreview={showRoutePreview} />
 
       {/* Main Depot / Distribution Centre Marker */}
-      <Marker position={MAP_CENTER} icon={DEPOT_ICON}>
+      <Marker position={DEPOT_COORDS} icon={DEPOT_ICON}>
         <Popup>
           <div className="text-sm p-1">
             <div className="flex items-center gap-1.5 font-black text-black">
@@ -381,3 +369,5 @@ export default function MapView({
     </MapContainer>
   );
 }
+
+export default memo(MapView);

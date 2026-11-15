@@ -12,9 +12,9 @@ Genetic Algorithm Architecture
 ------------------------------
 1. Initial Population (Başlangıç Popülasyonu):
    One Nearest-Neighbor greedy tour seed combined with random permutations.
-2. Capacity Decoder & Fitness (Uygunluk & Kapasite Dekoderi):
-   Splits Giant-Tour chromosomes across vehicles respecting capacity limits
-   and applies ``DROP_PENALTY`` to unassigned customers.
+2. Zero-Allocation Fitness & Capacity Decoder (Uygunluk & Kapasite Dekoderi):
+   Scores Giant-Tour chromosomes with pure scalar arithmetic during evolution
+   and materialises route structures once for the winning chromosome.
 3. Tournament Selection (Turnuva Seçilimi):
    Selects fit parents via k-way tournament comparisons.
 4. Order Crossover - OX1 (Çaprazlama):
@@ -98,8 +98,67 @@ def _create_initial_population(
 
 
 # ---------------------------------------------------------------------------
-# 2. Uygunluk & Kapasite Dekoderi (Capacity Decoder & Fitness Function)
+# 2. Uygunluk & Kapasite Dekoderi (Zero-Allocation Fitness & Route Decoder)
 # ---------------------------------------------------------------------------
+
+def _evaluate_fitness(
+    chromosome: List[int],
+    distance_matrix: List[List[int]],
+    demands: List[int],
+    num_vehicles: int,
+    vehicle_capacities: List[int],
+    max_vehicle_capacity: int,
+) -> int:
+    """
+    Zero-allocation fitness evaluation for the GA hot loop:
+    fitness_cost = total_distance_m + dropped_count * DROP_PENALTY.
+    Avoids allocating route dicts and node lists across generations.
+    """
+    total_distance = 0
+    dropped_count = 0
+
+    vehicle_idx = 0
+    current_load = 0
+    last_node = 0
+
+    for node in chromosome:
+        demand = demands[node]
+
+        if demand > max_vehicle_capacity:
+            dropped_count += 1
+            continue
+
+        if vehicle_idx < num_vehicles and current_load + demand <= vehicle_capacities[vehicle_idx]:
+            total_distance += distance_matrix[last_node][node]
+            last_node = node
+            current_load += demand
+            continue
+
+        assigned = False
+        while vehicle_idx < num_vehicles:
+            total_distance += distance_matrix[last_node][0]
+            vehicle_idx += 1
+            current_load = 0
+            last_node = 0
+
+            if vehicle_idx < num_vehicles and demand <= vehicle_capacities[vehicle_idx]:
+                total_distance += distance_matrix[0][node]
+                last_node = node
+                current_load = demand
+                assigned = True
+                break
+
+        if not assigned:
+            dropped_count += 1
+
+    if vehicle_idx < num_vehicles:
+        total_distance += distance_matrix[last_node][0]
+        remaining_empty = num_vehicles - vehicle_idx - 1
+        if remaining_empty > 0:
+            total_distance += remaining_empty * distance_matrix[0][0]
+
+    return total_distance + dropped_count * DROP_PENALTY
+
 
 def _close_vehicle_route(
     vehicle_id: int,
@@ -109,28 +168,24 @@ def _close_vehicle_route(
 ) -> Dict[str, Any]:
     """Close an active or unused vehicle route by returning to the depot (0)."""
     last_node = current_nodes[-1]
-    closed_dist = current_dist + distance_matrix[last_node][0]
-    closed_nodes = current_nodes + [0]
     return {
         "vehicle": vehicle_id,
-        "route_nodes": closed_nodes,
-        "route_distance_m": closed_dist,
+        "route_nodes": current_nodes + [0],
+        "route_distance_m": current_dist + distance_matrix[last_node][0],
     }
 
 
-def _decode_and_evaluate(
+def _decode_routes(
     chromosome: List[int],
     distance_matrix: List[List[int]],
     demands: List[int],
     num_vehicles: int,
     vehicle_capacities: List[int],
-) -> Tuple[int, List[Dict[str, Any]], List[int], int]:
+) -> Tuple[List[Dict[str, Any]], List[int], int]:
     """
-    Decode a Giant-Tour permutation into capacity-feasible vehicle routes and
-    compute total fitness cost = total_distance_m + len(dropped) * DROP_PENALTY.
-
-    Unused vehicles are always emitted with route_nodes=[0, 0] and distance=0
-    to maintain full schema compatibility with the frontend and API router.
+    Materialise vehicle routes, dropped node indices, and total distance
+    for the winning Giant-Tour chromosome after evolution completes.
+    Unused vehicles are emitted with route_nodes=[0, 0] and distance=0.
     """
     routes: List[Dict[str, Any]] = []
     dropped: List[int] = []
@@ -145,7 +200,6 @@ def _decode_and_evaluate(
     for node in chromosome:
         demand = demands[node]
 
-        # Skip immediately if demand exceeds the largest vehicle in the fleet.
         if demand > max_vehicle_capacity:
             dropped.append(node)
             continue
@@ -157,7 +211,6 @@ def _decode_and_evaluate(
             current_load += demand
             continue
 
-        # Close the saturated vehicle and search subsequent vehicles for capacity.
         assigned = False
         while vehicle_idx < num_vehicles:
             closed_route = _close_vehicle_route(
@@ -181,7 +234,6 @@ def _decode_and_evaluate(
         if not assigned:
             dropped.append(node)
 
-    # Close the last active vehicle and pad remaining unused fleet slots.
     while vehicle_idx < num_vehicles:
         closed_route = _close_vehicle_route(
             vehicle_idx, current_nodes, current_dist, distance_matrix
@@ -193,8 +245,7 @@ def _decode_and_evaluate(
         current_nodes = [0]
         current_dist = 0
 
-    fitness_cost = total_distance + len(dropped) * DROP_PENALTY
-    return fitness_cost, routes, dropped, total_distance
+    return routes, sorted(dropped), total_distance
 
 
 # ---------------------------------------------------------------------------
@@ -202,7 +253,7 @@ def _decode_and_evaluate(
 # ---------------------------------------------------------------------------
 
 def _tournament_select(
-    evaluated_population: List[Tuple[int, List[int], List[Dict[str, Any]], List[int], int]],
+    evaluated_population: List[Tuple[int, List[int]]],
     tournament_size: int,
     rng: random.Random,
 ) -> List[int]:
@@ -315,14 +366,6 @@ def solve_cvrp(
             "dropped":   List[int],    # node indices the solver could not serve
             "total_distance_m": int,   # sum of all route distances in metres
         }
-
-        Each route dict::
-
-            {
-                "vehicle":      int,        # 0-based vehicle index
-                "route_nodes":  List[int],  # ordered node indices (incl. depot)
-                "route_distance_m": int,    # total distance for this route
-            }
     """
     n_nodes = len(distance_matrix)
     customers = list(range(1, n_nodes))
@@ -351,20 +394,25 @@ def solve_cvrp(
 
     rng = random.Random(RANDOM_SEED)
     start_time = time.monotonic()
+    max_vehicle_capacity = max(vehicle_capacities, default=0)
 
-    # Step 1: Initialize and evaluate Generation 0
+    # Step 1: Initialize and score Generation 0
     initial_chromosomes = _create_initial_population(
         n_nodes, distance_matrix, POPULATION_SIZE, rng
     )
-    evaluated_pop = []
-    for chrom in initial_chromosomes:
-        cost, routes, dropped, dist = _decode_and_evaluate(
-            chrom, distance_matrix, demands, num_vehicles, vehicle_capacities
+    evaluated_pop: List[Tuple[int, List[int]]] = [
+        (
+            _evaluate_fitness(
+                chrom, distance_matrix, demands, num_vehicles, vehicle_capacities, max_vehicle_capacity
+            ),
+            chrom,
         )
-        evaluated_pop.append((cost, chrom, routes, dropped, dist))
+        for chrom in initial_chromosomes
+    ]
 
     evaluated_pop.sort(key=lambda entry: entry[0])
-    best_cost, _, best_routes, best_dropped, best_dist = evaluated_pop[0]
+    best_cost = evaluated_pop[0][0]
+    best_chromosome = evaluated_pop[0][1][:]
 
     # Evolution loop over generations
     elite_count = min(ELITE_SIZE, POPULATION_SIZE)
@@ -373,9 +421,8 @@ def solve_cvrp(
             break
 
         # Step 6 (Elitism): Preserve top individuals unchanged into next generation
-        next_evaluated = [
-            (entry[0], entry[1][:], entry[2], entry[3], entry[4])
-            for entry in evaluated_pop[:elite_count]
+        next_evaluated: List[Tuple[int, List[int]]] = [
+            (cost, chrom[:]) for cost, chrom in evaluated_pop[:elite_count]
         ]
 
         # Produce offspring via Tournament Selection, OX1 Crossover, and Mutation
@@ -386,18 +433,21 @@ def solve_cvrp(
             child = _order_crossover(parent1, parent2, rng)
             _mutate(child, MUTATION_RATE, rng)
 
-            cost, routes, dropped, dist = _decode_and_evaluate(
-                child, distance_matrix, demands, num_vehicles, vehicle_capacities
+            cost = _evaluate_fitness(
+                child, distance_matrix, demands, num_vehicles, vehicle_capacities, max_vehicle_capacity
             )
-            next_evaluated.append((cost, child, routes, dropped, dist))
+            next_evaluated.append((cost, child))
 
         next_evaluated.sort(key=lambda entry: entry[0])
         if next_evaluated[0][0] < best_cost:
-            best_cost, _, best_routes, best_dropped, best_dist = next_evaluated[0]
+            best_cost = next_evaluated[0][0]
+            best_chromosome = next_evaluated[0][1][:]
 
         evaluated_pop = next_evaluated
 
-    dropped_sorted = sorted(best_dropped)
+    best_routes, dropped_sorted, best_dist = _decode_routes(
+        best_chromosome, distance_matrix, demands, num_vehicles, vehicle_capacities
+    )
 
     logger.info(
         "GA-CVRP solve SUCCESS – total_distance=%s m  routes=%s  dropped=%s node(s).",

@@ -8,7 +8,7 @@ import RoutePanel from './components/RoutePanel';
 import MapView from './components/MapView';
 import NavigationHUD from './components/NavigationHUD';
 import { calculateDistanceKm } from './utils/geo';
-import { REFRESH_MS, MIN_SIDEBAR_WIDTH, MAX_SIDEBAR_WIDTH } from './constants';
+import { REFRESH_MS, MIN_SIDEBAR_WIDTH, MAX_SIDEBAR_WIDTH, DEFAULT_SIDEBAR_WIDTH, DEPOT_COORDS } from './constants';
 
 export default function App() {
   const [orders, setOrders] = useState([]);
@@ -32,14 +32,14 @@ export default function App() {
     if (typeof window !== 'undefined') {
       return Math.round(window.innerWidth * 0.25);
     }
-    return 380;
+    return DEFAULT_SIDEBAR_WIDTH;
   });
   const [isResizing, setIsResizing] = useState(false);
   const animationFrameRef = useRef(null);
 
-  // Proportional scaling factor relative to default width (380px)
+  // Proportional scaling factor relative to default width
   const scale = useMemo(() => {
-    return Math.max(0.75, Math.min(2.2, sidebarWidth / 380));
+    return Math.max(0.75, Math.min(2.2, sidebarWidth / DEFAULT_SIDEBAR_WIDTH));
   }, [sidebarWidth]);
 
   const startResizing = useCallback((e) => {
@@ -71,13 +71,9 @@ export default function App() {
   );
 
   useEffect(() => {
-    if (isResizing) {
-      window.addEventListener('mousemove', resize);
-      window.addEventListener('mouseup', stopResizing);
-    } else {
-      window.removeEventListener('mousemove', resize);
-      window.removeEventListener('mouseup', stopResizing);
-    }
+    if (!isResizing) return;
+    window.addEventListener('mousemove', resize);
+    window.addEventListener('mouseup', stopResizing);
     return () => {
       window.removeEventListener('mousemove', resize);
       window.removeEventListener('mouseup', stopResizing);
@@ -172,7 +168,7 @@ export default function App() {
   const prevStop = useMemo(() => {
     if (currentStopIndex === 0) {
       // First stop: origin is depot (courier starting point)
-      return allStops[0] || { lat: 37.7765, lon: 29.0864 };
+      return allStops[0] || { lat: DEPOT_COORDS[0], lon: DEPOT_COORDS[1] };
     }
     return deliveryStops[currentStopIndex - 1] || allStops[0];
   }, [currentStopIndex, deliveryStops, allStops]);
@@ -208,6 +204,16 @@ export default function App() {
   const handleClosePreview = useCallback(() => {
     setShowRoutePreview(false);
   }, []);
+
+  const handleOpenPreview = useCallback(() => {
+    setShowRoutePreview(true);
+  }, []);
+
+  const handleRoutesGenerated = useCallback((data) => {
+    setRoutes(data);
+    setShowRoutePreview(true);
+    refresh();
+  }, [refresh]);
 
   // Mark Delivered & Advance to Next Stop
   const handleMarkDelivered = async () => {
@@ -429,12 +435,8 @@ export default function App() {
         {/* Route generation panel with Start Journey trigger */}
         <RoutePanel
           routes={routes}
-          onRoutesGenerated={(data) => {
-            setRoutes(data);
-            setShowRoutePreview(true);
-            refresh();
-          }}
-          onOpenPreview={() => setShowRoutePreview(true)}
+          onRoutesGenerated={handleRoutesGenerated}
+          onOpenPreview={handleOpenPreview}
           onStartJourney={handleStartJourney}
         />
       </aside>

@@ -1,7 +1,7 @@
 """
 routers/routes.py
 -----------------
-Route generation endpoint running Google OR-Tools CVRP solver.
+Route generation endpoint running the Evolutionary Genetic Algorithm (GA) CVRP solver.
 """
 
 import logging
@@ -27,7 +27,7 @@ DEPOT_LONGITUDE = 29.0864
     "/generate",
     status_code=status.HTTP_200_OK,
     summary="Generate optimised delivery routes (CVRP)",
-    description="Runs the Google OR-Tools CVRP solver on routable orders and transitions routed ones to ROUTED.",
+    description="Runs the GA CVRP solver on routable orders and transitions routed ones to ROUTED.",
 )
 def generate_routes(
     payload: RouteGenerationRequest,
@@ -87,7 +87,7 @@ def generate_routes(
     if result["status"] == "NO_SOLUTION":
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="OR-Tools could not find any feasible solution for the given fleet parameters.",
+            detail="GA solver could not find any feasible solution for the given fleet parameters.",
         )
 
     dropped_node_set = set(result["dropped"])
@@ -116,22 +116,30 @@ def generate_routes(
                 })
                 routed_order_ids.append(order.id)
 
-        stop_coords = [
-            (s["lat"], s["lon"])
-            for s in route_order_details
-            if s.get("lat") is not None and s.get("lon") is not None
-        ]
-        road_data = get_route_driving_geometry(stop_coords)
-        actual_distance = int(round(road_data.get("distance_m") or route["route_distance_m"]))
-        duration_mins = round((road_data.get("duration_s") or 0) / 60, 1)
+        if len(route_order_details) > 2:
+            stop_coords = [
+                (s["lat"], s["lon"])
+                for s in route_order_details
+                if s.get("lat") is not None and s.get("lon") is not None
+            ]
+            road_data = get_route_driving_geometry(stop_coords)
+            actual_distance = int(round(road_data.get("distance_m") or route["route_distance_m"]))
+            duration_mins = round((road_data.get("duration_s") or 0) / 60, 1)
+            geometry = road_data.get("geometry", [])
+            legs_geometry = road_data.get("legs_geometry", [])
+        else:
+            actual_distance = 0
+            duration_mins = 0.0
+            geometry = []
+            legs_geometry = []
 
         vehicle_routes.append({
             "vehicle": route["vehicle"],
             "stops": route_order_details,
             "route_distance_m": actual_distance,
             "duration_minutes": duration_mins,
-            "geometry": road_data.get("geometry", []),
-            "legs_geometry": road_data.get("legs_geometry", []),
+            "geometry": geometry,
+            "legs_geometry": legs_geometry,
         })
 
     # 5. Batch update routed orders

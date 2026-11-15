@@ -34,7 +34,7 @@ An enterprise-grade logistics command center and fleet route optimization platfo
 
 ### 2. Evolutionary Genetic Algorithm (GA) CVRP Solver
 - Solves the Capacitated Vehicle Routing Problem (CVRP) starting and ending at the primary distribution depot (Denizli central depot: 37.7765 N, 29.0864 E).
-- Initial Population & Giant-Tour Decoding: Combines a Nearest-Neighbor greedy seed with randomized customer permutations, splitting tours across fleet vehicles according to integer gram capacities.
+- Initial Population & Giant-Tour Decoding: Combines a Nearest-Neighbor greedy seed with randomized customer permutations. During evolution, chromosomes are scored via zero-allocation scalar integer arithmetic, materialising final route structures only once for the winning tour.
 - Evolutionary Operators: Employs Tournament Selection (k=3), Order Crossover (OX1) to preserve stop ordering without duplicates, hybrid 2-Opt segment inversion and swap mutation, and Elitism across generations.
 - Graceful Degradation: Applies `DROP_PENALTY` in the fitness evaluation so excess orders beyond fleet vehicle capacities are safely reported as unassigned rather than failing outright.
 
@@ -52,6 +52,7 @@ An enterprise-grade logistics command center and fleet route optimization platfo
 - Route Visualizer: Highlights the active travel leg in blue while fading completed legs and displaying dedicated depot markers.
 - Unified Modal & Card UI Language (Arayüz İyileştirmesi): Synchronized `OrderCard`, `ResolveModal`, `NewOrderModal`, `RoutePanel`, and `NavigationHUD` with `rounded-3xl` surfaces, layered `shadow-xl shadow-green-900/10` depth shadows, light `bg-gray-50` `rounded-xl` inputs featuring `focus:ring-2 focus:ring-green-500` focus highlights, and unified `bg-green-700` `rounded-2xl` primary action buttons.
 - Conditional Route Panel State Flow: `RoutePanel` hides the "Rotaları Hesapla" trigger once route optimization succeeds, showing only total distance/duration summary metrics and the "Yolculuk Kartını Aç" button until routes are cleared.
+- Render & Asset Optimization: Shared geospatial/palette constants across `App.jsx` and `MapView.jsx`, `React.memo` wrapping across `MapView`, `StatsBar`, and `RoutePanel` for smooth 60fps sidebar resizing, and memoized route callbacks.
 
 ---
 

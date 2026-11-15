@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { generateRoutes } from '../api';
 
-export default function RoutePanel({ routes, onRoutesGenerated, onStartJourney, onOpenPreview }) {
+function RoutePanel({ routes, onRoutesGenerated, onStartJourney, onOpenPreview }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -90,3 +90,5 @@ export default function RoutePanel({ routes, onRoutesGenerated, onStartJourney, 
     </div>
   );
 }
+
+export default memo(RoutePanel);

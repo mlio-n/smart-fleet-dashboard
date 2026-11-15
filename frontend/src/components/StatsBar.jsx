@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 const CARDS = [
   { key: 'total',              label: 'Toplam Sipariş',  textColor: 'text-black',         bgColor: 'bg-green-100/75 border-green-400/80 shadow-xs' },
   { key: 'PENDING',            label: 'Beklemede',       textColor: 'text-zinc-900',      bgColor: 'bg-zinc-200/75 border-zinc-400/80 shadow-xs' },
@@ -6,7 +8,7 @@ const CARDS = [
   { key: 'ROUTED',             label: 'Rotalandı',       textColor: 'text-green-800',     bgColor: 'bg-green-100/75 border-green-400 shadow-xs' },
 ];
 
-export default function StatsBar({ stats, onFilter, activeFilter }) {
+function StatsBar({ stats, onFilter, activeFilter }) {
   return (
     <header className="flex items-center gap-3 px-4 py-2.5 glass-panel rounded-2xl z-20 relative shadow-[0_16px_40px_-10px_rgba(0,0,0,0.15)]">
       {/* Specular top reflection highlight */}
@@ -48,3 +50,5 @@ export default function StatsBar({ stats, onFilter, activeFilter }) {
     </header>
   );
 }
+
+export default memo(StatsBar);

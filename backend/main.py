@@ -7,7 +7,7 @@ Architecture:
 - Routers: system, orders, routes
 - Services: geocoding (asynchronous background worker)
 - ORM: SQLAlchemy 2.0 with SQLite WAL mode
-- Routing: Google OR-Tools CVRP + OSRM road geometry
+- Routing: Evolutionary Genetic Algorithm (GA) CVRP + OSRM road geometry
 """
 
 import sys
