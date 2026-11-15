@@ -43,6 +43,7 @@ An enterprise-grade logistics command center and fleet route optimization platfo
 - Rate-Limit Compliance: Enforces a 1.2-second delay between OSM requests to comply with OpenStreetMap policy.
 - Specificity Validation: Results with a Nominatim place_rank below 26 (e.g., city or region-level matches without street specificity) are automatically flagged as ANOMALY.
 - Intelligent Street Extraction Fallback: When an exact address (with specific apartment or building numbers) yields no match, a regex parser extracts the core street, avenue, or boulevard (Caddesi, Bulvari, Sokak) and district (Pamukkale, Merkezefendi, Denizli) to retry with clean street-level coordinates.
+- Interactive Anomaly Address Geocoding: In `ResolveModal`, support agents enter a single open address ("Doğru Açık Adres") instead of raw lat/lon coordinates; submitting queries Nominatim (with street-level fallback) and automatically maps resolved `(lat, lng)` coordinates to `/orders/{order_id}/resolve`.
 
 ### 4. Interactive Command Center & Driver Navigation Mode
 - Full-Viewport Underlay Map: The Leaflet map spans the entire browser viewport behind floating glassmorphic interface panels.
@@ -92,7 +93,7 @@ smart-fleet-dashboard/
             |-- NavigationHUD.jsx # Driver navigation HUD overlay and turn-by-turn cards
             |-- NewOrderModal.jsx # Order creation modal with input validation
             |-- OrderCard.jsx     # Individual order card with status badges and quick actions
-            |-- ResolveModal.jsx  # Support agent anomaly coordinate override modal
+            |-- ResolveModal.jsx  # Support agent open-address anomaly geocoding & resolution modal
             |-- RoutePanel.jsx    # Fleet parameters form and solver trigger
             `-- StatsBar.jsx      # Floating header metrics bar with click-to-filter cards
 ```
