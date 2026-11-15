@@ -39,7 +39,7 @@ function OrderCard({
   const addressSize = Math.round(12 * scale);
   const metaSize = Math.round(11 * scale);
   const badgeSize = Math.round(10.5 * scale);
-  const pad = Math.round(15 * scale);
+  const pad = Math.round(20 * scale);
 
   return (
     <div
@@ -47,10 +47,10 @@ function OrderCard({
       style={{
         padding: `${pad}px`,
       }}
-      className={`group relative flex flex-col justify-between w-full rounded-2xl glass-card border border-white/60 transition-all duration-200 cursor-pointer select-text ${
+      className={`group relative flex flex-col justify-between gap-4 w-full p-6 rounded-3xl glass-card border border-white/60 transition-all duration-200 cursor-pointer select-text ${
         isSelected
-          ? 'ring-2 ring-emerald-600 !bg-emerald-50/70 shadow-md scale-[1.01]'
-          : 'shadow-sm hover:shadow-md hover:!bg-white/70 hover:scale-[1.008]'
+          ? 'ring-2 ring-green-600 !bg-green-50/70 shadow-2xl shadow-green-900/15 scale-[1.01]'
+          : 'shadow-xl shadow-green-900/10 hover:shadow-2xl hover:shadow-green-900/15 hover:!bg-white/75 hover:scale-[1.008]'
       }`}
     >
       <div>
@@ -126,18 +126,15 @@ function OrderCard({
         </div>
 
         {order.status === 'ANOMALY' && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <button
               title="Yeniden tara"
               onClick={(e) => {
                 e.stopPropagation();
                 onRetry?.(order.id);
               }}
-              style={{
-                fontSize: `${metaSize}px`,
-                padding: `${Math.round(2.5 * scale)}px ${Math.round(8 * scale)}px`,
-              }}
-              className="font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 transition cursor-pointer"
+              style={{ fontSize: `${metaSize}px` }}
+              className="font-medium rounded-2xl bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200/60 px-3.5 py-2 transition cursor-pointer"
             >
               Yeniden Tara
             </button>
@@ -147,11 +144,8 @@ function OrderCard({
                 e.stopPropagation();
                 onResolve?.(order);
               }}
-              style={{
-                fontSize: `${metaSize}px`,
-                padding: `${Math.round(2.5 * scale)}px ${Math.round(10 * scale)}px`,
-              }}
-              className="font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition cursor-pointer shadow-xs"
+              style={{ fontSize: `${metaSize}px` }}
+              className="font-medium rounded-2xl bg-green-700 hover:bg-green-800 text-white px-4 py-2 shadow-md shadow-green-900/15 transition active:scale-98 cursor-pointer"
             >
               Çöz
             </button>

@@ -1,6 +1,6 @@
 # Smart Fleet & Anomaly Support Dashboard
 
-An enterprise-grade logistics command center and fleet route optimization platform. The system automates shipment ingestion, provides asynchronous geocoding with intelligent street fallback, detects geographic anomalies for manual support intervention, computes optimal vehicle routes via Google OR-Tools and OSRM road networks, and delivers an immersive driver navigation interface with real-time HUD tracking.
+An enterprise-grade logistics command center and fleet route optimization platform. The system automates shipment ingestion, provides asynchronous geocoding with intelligent street fallback, detects geographic anomalies for manual support intervention, computes optimal vehicle routes via an Evolutionary Genetic Algorithm (GA) and OSRM road networks, and delivers an immersive driver navigation interface with real-time HUD tracking.
 
 ---
 
@@ -11,7 +11,7 @@ An enterprise-grade logistics command center and fleet route optimization platfo
 - FastAPI (High-performance ASGI framework with lifespan lifecycle)
 - SQLAlchemy 2.0 (Modern mapped DeclarativeBase ORM)
 - SQLite (Local ACID-compliant relational persistence)
-- Google OR-Tools (Capacitated Vehicle Routing Problem solver with penalty-based node dropping)
+- Evolutionary Genetic Algorithm (Custom Python GA-CVRP solver with OX1 crossover, 2-Opt/swap mutation, elitism, and penalty-based node dropping)
 - OSRM (Open Source Routing Machine for real street distance matrices and turn-by-turn GeoJSON geometry)
 - OpenStreetMap Nominatim API (Asynchronous forward geocoding with rate limiting)
 - Uvicorn (ASGI production server)
@@ -32,10 +32,11 @@ An enterprise-grade logistics command center and fleet route optimization platfo
 - Offline Fallback: If external network connectivity fails, a robust fallback automatically computes Haversine distances augmented by a 1.3x urban circuity factor.
 - Turn-by-Turn Driving Geometry: The OSRM Route API extracts high-precision street coordinates (GeoJSON), leg-by-leg geometries, and estimated travel durations (minutes) for every dispatched route.
 
-### 2. Google OR-Tools CVRP Solver
+### 2. Evolutionary Genetic Algorithm (GA) CVRP Solver
 - Solves the Capacitated Vehicle Routing Problem (CVRP) starting and ending at the primary distribution depot (Denizli central depot: 37.7765 N, 29.0864 E).
-- Integer Arithmetic: Coordinates, weights (converted from kilograms to integer grams), and distances are normalized to integer values required by the constraint programming solver.
-- Graceful Degradation: Utilizes AddDisjunction with large penalties (DROP_PENALTY) so that excess orders beyond fleet vehicle capacities are safely reported as unassigned rather than triggering an infeasible solver exception.
+- Initial Population & Giant-Tour Decoding: Combines a Nearest-Neighbor greedy seed with randomized customer permutations, splitting tours across fleet vehicles according to integer gram capacities.
+- Evolutionary Operators: Employs Tournament Selection (k=3), Order Crossover (OX1) to preserve stop ordering without duplicates, hybrid 2-Opt segment inversion and swap mutation, and Elitism across generations.
+- Graceful Degradation: Applies `DROP_PENALTY` in the fitness evaluation so excess orders beyond fleet vehicle capacities are safely reported as unassigned rather than failing outright.
 
 ### 3. Asynchronous Geocoding with Turkish Street Fallback
 - Non-blocking Ingestion: Orders submitted via batch or single endpoints are saved immediately in PENDING status. Geocoding runs in the background using FastAPI BackgroundTasks.
@@ -48,6 +49,7 @@ An enterprise-grade logistics command center and fleet route optimization platfo
 - Resizable Glassmorphic Sidebar: Operators can drag the sidebar border to expand or contract the order list between 250px and 850px, with typography and UI elements scaling proportionally.
 - Driver Navigation HUD: When routes are generated and navigation begins, the sidebar transitions off-screen and an active driving HUD panel appears at the bottom. The HUD displays current stop index, target customer details, exact road distance, estimated arrival time, and a single-click action to mark orders as DELIVERED and advance to the next delivery waypoint.
 - Route Visualizer: Highlights the active travel leg in blue while fading completed legs and displaying dedicated depot markers.
+- Unified Modal & Card UI Language (Arayüz İyileştirmesi): Synchronized `OrderCard`, `ResolveModal`, `NewOrderModal`, and `NavigationHUD` with `rounded-3xl` surfaces, layered `shadow-2xl shadow-green-900/10` depth shadows, light `bg-gray-50` `rounded-xl` inputs featuring `ring-green-500` focus highlights, and unified `bg-green-700` `rounded-2xl` primary action buttons.
 
 ---
 
@@ -63,7 +65,7 @@ smart-fleet-dashboard/
 |   |-- database.py          # SQLAlchemy 2.0 engine, session factory, WAL mode
 |   |-- models.py            # SQLAlchemy ORM models (Order, OrderStatus enum)
 |   |-- schemas.py           # Pydantic v2 validation and response schemas
-|   |-- routing.py           # Google OR-Tools CVRP solver implementation
+|   |-- routing.py           # Evolutionary Genetic Algorithm (GA) CVRP solver
 |   |-- utils.py             # OSRM road matrix, Haversine fallback, turn-by-turn geometry
 |   |-- routers/
 |   |   |-- system.py        # Health check and aggregate order statistics endpoints

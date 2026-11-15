@@ -18,7 +18,7 @@ function NavigationHUD({
   const firstDeliveryStop = deliveryStops[0] || null;
 
   return (
-    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[2000] glass-panel rounded-3xl p-6 w-11/12 max-w-xl shadow-[0_25px_70px_-15px_rgba(0,0,0,0.25)] animate-in fade-in slide-in-from-top-12 zoom-in-95 duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden pointer-events-auto">
+    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[2000] glass-panel rounded-3xl p-6 w-11/12 max-w-xl shadow-2xl shadow-green-900/10 animate-in fade-in slide-in-from-top-12 zoom-in-95 duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden pointer-events-auto">
       {/* Glass specular top reflection highlight */}
       <div className="absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none" />
 
@@ -95,7 +95,7 @@ function NavigationHUD({
           {/* Yolculuğa Başla Button */}
           <button
             onClick={() => onStartJourney(routes)}
-            className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3.5 text-sm shadow-sm transition active:scale-98 cursor-pointer flex items-center justify-center gap-2"
+            className="w-full rounded-2xl bg-green-700 hover:bg-green-800 text-white font-medium py-3.5 px-6 text-sm shadow-lg shadow-green-900/15 transition active:scale-98 cursor-pointer flex items-center justify-center gap-2"
           >
             <span>Yolculuğa Başla</span>
           </button>
@@ -181,7 +181,7 @@ function NavigationHUD({
           {/* Mark Delivered Button */}
           <button
             onClick={onMarkDelivered}
-            className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3.5 text-sm shadow-sm transition active:scale-98 cursor-pointer flex items-center justify-center gap-2"
+            className="w-full rounded-2xl bg-green-700 hover:bg-green-800 text-white font-medium py-3.5 px-6 text-sm shadow-lg shadow-green-900/15 transition active:scale-98 cursor-pointer flex items-center justify-center gap-2"
           >
             <span>Teslim Edildi</span>
           </button>
