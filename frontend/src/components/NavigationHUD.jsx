@@ -18,7 +18,7 @@ function NavigationHUD({
   const firstDeliveryStop = deliveryStops[0] || null;
 
   return (
-    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[2000] glass-panel rounded-3xl p-6 w-11/12 max-w-xl shadow-2xl shadow-green-900/10 animate-in fade-in slide-in-from-top-12 zoom-in-95 duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden pointer-events-auto">
+    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[2000] glass-panel rounded-3xl p-6 w-11/12 max-w-xl shadow-xl shadow-green-900/10 animate-in fade-in slide-in-from-top-12 zoom-in-95 duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden pointer-events-auto">
       {/* Glass specular top reflection highlight */}
       <div className="absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none" />
 

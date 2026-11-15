@@ -49,7 +49,8 @@ An enterprise-grade logistics command center and fleet route optimization platfo
 - Resizable Glassmorphic Sidebar: Operators can drag the sidebar border to expand or contract the order list between 250px and 850px, with typography and UI elements scaling proportionally.
 - Driver Navigation HUD: When routes are generated and navigation begins, the sidebar transitions off-screen and an active driving HUD panel appears at the bottom. The HUD displays current stop index, target customer details, exact road distance, estimated arrival time, and a single-click action to mark orders as DELIVERED and advance to the next delivery waypoint.
 - Route Visualizer: Highlights the active travel leg in blue while fading completed legs and displaying dedicated depot markers.
-- Unified Modal & Card UI Language (Arayüz İyileştirmesi): Synchronized `OrderCard`, `ResolveModal`, `NewOrderModal`, and `NavigationHUD` with `rounded-3xl` surfaces, layered `shadow-2xl shadow-green-900/10` depth shadows, light `bg-gray-50` `rounded-xl` inputs featuring `ring-green-500` focus highlights, and unified `bg-green-700` `rounded-2xl` primary action buttons.
+- Unified Modal & Card UI Language (Arayüz İyileştirmesi): Synchronized `OrderCard`, `ResolveModal`, `NewOrderModal`, `RoutePanel`, and `NavigationHUD` with `rounded-3xl` surfaces, layered `shadow-xl shadow-green-900/10` depth shadows, light `bg-gray-50` `rounded-xl` inputs featuring `focus:ring-2 focus:ring-green-500` focus highlights, and unified `bg-green-700` `rounded-2xl` primary action buttons.
+- Conditional Route Panel State Flow: `RoutePanel` hides the "Rotaları Hesapla" trigger once route optimization succeeds, showing only total distance/duration summary metrics and the "Yolculuk Kartını Aç" button until routes are cleared.
 
 ---
 

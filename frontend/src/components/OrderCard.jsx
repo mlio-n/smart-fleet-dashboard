@@ -145,7 +145,7 @@ function OrderCard({
                 onResolve?.(order);
               }}
               style={{ fontSize: `${metaSize}px` }}
-              className="font-medium rounded-2xl bg-green-700 hover:bg-green-800 text-white px-4 py-2 shadow-md shadow-green-900/15 transition active:scale-98 cursor-pointer"
+              className="font-medium rounded-2xl bg-green-700 hover:bg-green-800 text-white px-4 py-2 shadow-md shadow-green-900/10 transition active:scale-98 cursor-pointer"
             >
               Çöz
             </button>

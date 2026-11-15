@@ -137,7 +137,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
-        className="w-full max-w-lg rounded-3xl glass-panel p-6 animate-in fade-in zoom-in-95 duration-300 relative overflow-hidden shadow-2xl shadow-green-900/10"
+        className="w-full max-w-lg rounded-3xl glass-panel p-6 animate-in fade-in zoom-in-95 duration-300 relative overflow-hidden shadow-xl shadow-green-900/10"
       >
         {/* Glass specular top reflection highlight */}
         <div className="absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none" />
@@ -232,7 +232,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
               value={form.customer_name}
               onChange={set('customer_name')}
               placeholder="Örn: Ahmet Yılmaz"
-              className="w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/30 outline-none transition"
+              className="w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500 outline-none transition"
             />
           </div>
 
@@ -246,7 +246,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
               value={form.raw_address}
               onChange={set('raw_address')}
               placeholder="Örn: Çamlaraltı Mahallesi, Çamlık Caddesi Pamukkale Denizli"
-              className="w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/30 outline-none transition resize-none"
+              className="w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500 outline-none transition resize-none"
             />
           </div>
 
@@ -261,7 +261,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
               required
               value={form.weight}
               onChange={set('weight')}
-              className="w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/30 outline-none transition"
+              className="w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500 outline-none transition"
             />
           </div>
         </div>

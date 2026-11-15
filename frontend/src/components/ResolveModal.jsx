@@ -40,7 +40,7 @@ export default function ResolveModal({ order, onClose, onResolved }) {
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
-        className="w-full max-w-lg rounded-3xl glass-panel p-6 animate-in fade-in zoom-in-95 duration-300 relative overflow-hidden shadow-2xl shadow-green-900/10"
+        className="w-full max-w-lg rounded-3xl glass-panel p-6 animate-in fade-in zoom-in-95 duration-300 relative overflow-hidden shadow-xl shadow-green-900/10"
       >
         {/* Specular highlight border effect at top */}
         <div className="absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none" />
@@ -79,7 +79,7 @@ export default function ResolveModal({ order, onClose, onResolved }) {
                 type="number" step="any" required
                 value={form.new_latitude} onChange={set('new_latitude')}
                 placeholder="Örn: 37.7765"
-                className="mt-1.5 block w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/30 outline-none transition"
+                className="mt-1.5 block w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500 outline-none transition"
               />
             </label>
             <label className="block">
@@ -88,7 +88,7 @@ export default function ResolveModal({ order, onClose, onResolved }) {
                 type="number" step="any" required
                 value={form.new_longitude} onChange={set('new_longitude')}
                 placeholder="Örn: 29.0864"
-                className="mt-1.5 block w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/30 outline-none transition"
+                className="mt-1.5 block w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500 outline-none transition"
               />
             </label>
           </div>
@@ -99,7 +99,7 @@ export default function ResolveModal({ order, onClose, onResolved }) {
               type="text" required
               value={form.resolved_by} onChange={set('resolved_by')}
               placeholder="Örn: ahmet.destek"
-              className="mt-1.5 block w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/30 outline-none transition"
+              className="mt-1.5 block w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500 outline-none transition"
             />
           </label>
 
@@ -109,7 +109,7 @@ export default function ResolveModal({ order, onClose, onResolved }) {
               rows={2}
               value={form.support_note} onChange={set('support_note')}
               placeholder="Örn: Müşteri adresi telefonla teyit edilerek düzeltildi."
-              className="mt-1.5 block w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/30 outline-none transition resize-none"
+              className="mt-1.5 block w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500 outline-none transition resize-none"
             />
           </label>
         </div>
